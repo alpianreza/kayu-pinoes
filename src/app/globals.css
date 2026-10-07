@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fbf9f3;
+  --foreground: #27372d;
+}
+
+/*
+ * Variabel font dideklarasikan next/font di app/layout.tsx
+ * (--font-fraunces untuk judul, --font-jakarta untuk teks, --font-cairo untuk
+ * Arab). Cascade di bawah memakai font itu lalu jatuh ke metrik yang mirip,
+ * sehingga tampilan tetap wajar bila berkas font belum sampai (render offline,
+ * atau font gagal diunduh saat build).
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-jakarta), "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+}
+
+/*
+ * Warna garis bawaan untuk seluruh halaman.
+ *
+ * WAJIB berada di dalam @layer base.
+ *
+ * Tailwind v4 menaruh semua utility-nya di @layer utilities. Gaya yang TIDAK
+ * berada di layer mana pun selalu menang atas gaya yang berlayer, apa pun
+ * tingkat kekhususannya. Sebelum dibungkus, aturan bintang ini menimpa SEMUA
+ * warna garis utility - termasuk cincin dan lengkung pada ilustrasi mainan,
+ * yang warnanya jadi pudar semua.
+ */
+@layer base {
+  * {
+    border-color: rgb(49 75 58 / 0.1);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jakarta), "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: #f4c45d;
+  color: #314b3a;
+}
+
+/*
+ * Kelas judul. Namanya tidak berubah karena dipakai di seluruh komponen;
+ * isinya sekarang menunjuk Fraunces dengan cadangan Georgia.
+ *
+ * Angka sumbu optik (opsz) dibuat otomatis: Fraunces punya banyak variasi
+ * berdasarkan ukuran, jadi judul 60px terlihat tegas sementara kartu 18px
+ * tetap terbuka dan mudah dibaca.
+ */
+.font-display {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
+}
+
+/*
+ * Teks Arab memakai Cairo (font Arab yang dirancang untuk layar) supaya
+ * hurufnya tidak dipaksa masuk bentuk Latin. Aturan ini berada setelah
+ * .font-display di atas agar menang untuk elemen judul berbahasa Arab.
+ *
+ * Judul Arab dinaikkan bobotnya: Cairo 400 pada ukuran besar terlihat lebih
+ * kurus daripada Fraunces, dan dulu .font-display berbahasa Arab juga 700.
+ */
+:lang(ar),
+:lang(ar) .font-display {
+  font-family: var(--font-cairo), "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+:lang(ar) .font-display {
+  font-weight: 600;
+}
+
+/*
+ * Tracking negatif yang dipakai judul Latin (mis. -0.065em) merusak huruf
+ * Arab: huruf-hurufnya harus menyambung, dan spasi negatif memotong
+ * penyambungan itu. Diset nol untuk semua teks Arab.
+ *
+ * Tanpa `!important`: aturan di luar @layer apa pun sudah menang atas
+ * utility Tailwind (lihat catatan di bagian atas berkas ini).
+ */
+:lang(ar) {
+  letter-spacing: normal;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 50%;
+  transform: translate(-50%, -150%);
+  border-radius: 9999px;
+  background: #314b3a;
+  padding: 0.7rem 1rem;
+  color: #fff;
+  font-weight: 700;
+  transition: transform 150ms ease-out;
+}
+
+.skip-link:focus {
+  transform: translate(-50%, 0);
+  outline: 3px solid #f4c45d;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Panel editor produk di panel admin, ditampilkan sebagai modal. */
+.kp-modal-backdrop {
+  animation: kp-fade-in 160ms ease-out;
+}
+
+/*
+ * Kartu produk di bawah lipatan tidak perlu dilayout & digambar sebelum
+ * pengguna sampai ke sana. content-visibility:auto membuat browser melewati
+ * dua pekerjaan itu untuk kartu yang tidak terlihat, dan
+ * contain-intrinsic-size memberi ukuran perkiraan agar gulir tidak melompat
+ * saat kartunya akhirnya digambar. Efek paling terasa di ponsel dan katalog
+ * yang produknya mulai banyak.
+ */
+.kp-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 480px;
+}
+
+.kp-modal-panel {
+  animation: kp-rise-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes kp-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes kp-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+
+/* Keluar: kebalikan dari masuknya. Dua kelas sekaligus menaikkan kekhususan
+   sehingga menimpa animasi masuk di atas. */
+.kp-modal-backdrop.kp-modal-closing {
+  animation: kp-fade-out 150ms ease-in both;
+}
+
+.kp-modal-panel.kp-modal-closing {
+  animation: kp-sink-out 150ms ease-in both;
+}
+
+@keyframes kp-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes kp-sink-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}

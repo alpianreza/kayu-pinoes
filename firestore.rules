@@ -1,0 +1,148 @@
+rules_version = '2';
+
+// ---------------------------------------------------------------------------
+// Security Rules Cloud Firestore - Kayu Pinoes
+// ---------------------------------------------------------------------------
+// CATATAN:
+//   1. Email admin sudah diisi di bawah: alpianrezha@gmail.com
+//      Nilainya harus sama persis dengan NEXT_PUBLIC_ADMIN_EMAIL di .env.local.
+//   2. Security Rules tidak bisa membaca environment variable, jadi email
+//      ditulis literal (hard-coded) di file ini.
+//   3. Perbandingan email case-sensitive: tulis dengan huruf kecil semua.
+//   4. Akun admin dibuat di Firebase Console -> Authentication -> Users.
+//   5. Penulisan divalidasi bentuknya, sehingga dokumen cacat tidak bisa masuk
+//      walau ada bug di sisi aplikasi.
+//   6. Bila beberapa aturan `allow` cocok untuk satu permintaan, Firestore
+//      memakai gabungan OR: permintaan dilayani bila SALAH SATU aturan lolos.
+//      Aturan tambahan jadi tidak pernah mempersempit akses, dan urutan
+//      penulisannya tidak berpengaruh pada hasil.
+//   7. Aturan yang menyentuh `resource.data` menuntut query pembatas di sisi
+//      klien. Karena itu cabang `isAdmin()` ditulis lebih dulu dan tanpa
+//      menyentuh `resource.data`: begitu cabang itu benar, sisanya tidak
+//      dievaluasi, jadi daftar admin (yang memang tanpa filter) tetap lolos.
+//      Ini alasan ekspresi admin dan publik digabung dalam satu `||` dan bukan
+//      diletakkan pada dua `allow` terpisah - hasilnya sama, tapi satu baris
+//      lebih mudah dibaca dan tidak mengundang salah paham.
+//
+// Deploy:
+//   npx firebase-tools deploy --only firestore:rules
+// ---------------------------------------------------------------------------
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email == "alpianrezha@gmail.com";
+    }
+
+    function isProductStatus(status) {
+      return status == "draft" || status == "published";
+    }
+
+    // Warna heks 6 digit, mis. "#F9E2BE". Samakan dengan HEX_COLOR pada
+    // src/lib/product-record.ts.
+    function isHexColor(value) {
+      return value is string && value.matches("^#[0-9a-fA-F]{6}$");
+    }
+
+    // Nama ilustrasi cadangan yang dikenali ToyArtwork. Samakan dengan
+    // productIllustrations pada src/lib/products.ts.
+    function isIllustration(value) {
+      return value in [
+        "mainan", "rainbow", "car", "blocks", "puzzle",
+        "hewan", "boneka", "menara", "musik", "jam",
+      ];
+    }
+
+    function hasAllLanguages(translations) {
+      return translations.keys().hasAll(["id", "en", "ar"]);
+    }
+
+    // Kunci terjemahan yang wajib ada. Samakan dengan TRANSLATION_KEYS pada
+    // src/lib/product-record.ts - dokumen yang kurang satu kunci akan
+    // ditolak di sini alih-alih menghilang diam-diam di halaman publik.
+    function isValidTranslation(translation) {
+      return translation is map
+        && translation.keys().hasAll([
+            "name", "category", "age", "description",
+            "wood", "dimensions", "finish", "contents", "care",
+          ])
+        && translation.name is string
+        && translation.category is string
+        && translation.age is string
+        && translation.description is string
+        && translation.wood is string
+        && translation.dimensions is string
+        && translation.finish is string
+        && translation.contents is string
+        && translation.care is string;
+    }
+
+    // Varian (mis. ukuran) dengan harga opsional. Rules tidak punya
+    // perulangan, jadi di sini hanya bentuk daftar dan batas jumlahnya yang
+    // diperiksa; isi tiap baris divalidasi aplikasi (normalizeVariants di
+    // src/lib/product-record.ts).
+    function isValidVariants(variants) {
+      return variants is list && variants.size() <= 30;
+    }
+
+    // Bentuk dokumen produk yang diterima.
+    // `hasOnly` menolak field asing supaya tidak ada data yang ikut tersimpan
+    // tanpa disadari; field opsional (slug, imageUrl, imagePath, variants) boleh tidak
+    // ada, tapi kalau ada bentuknya harus benar.
+    function isValidProduct(data) {
+      return data.keys().hasOnly([
+          "id", "slug", "surface", "accent", "illustration",
+          "translations", "imageUrl", "imagePath", "status", "order",
+          "variants",
+        ])
+        && data.keys().hasAll([
+            "id", "surface", "accent", "illustration", "status", "order", "translations",
+          ])
+        && data.id is int
+        && data.id >= 1
+        && isHexColor(data.surface)
+        && isHexColor(data.accent)
+        && isIllustration(data.illustration)
+        && data.order is int
+        && isProductStatus(data.status)
+        && data.translations is map
+        && hasAllLanguages(data.translations)
+        && isValidTranslation(data.translations.id)
+        && isValidTranslation(data.translations.en)
+        && isValidTranslation(data.translations.ar)
+        && (!data.keys().hasAny(["slug"]) || data.slug.matches("^[a-z0-9]+(-[a-z0-9]+)*$"))
+        && (!data.keys().hasAny(["imageUrl"]) || data.imageUrl is string)
+        && (!data.keys().hasAny(["imagePath"]) || data.imagePath is string)
+        && (!data.keys().hasAny(["variants"]) || isValidVariants(data.variants));
+    }
+
+    // Katalog mainan.
+    // - Pengunjung umum hanya boleh membaca dokumen berstatus "published",
+    //   dan query publik wajib menyertakan filter `status == "published"`.
+    // - Admin boleh membaca semuanya (termasuk draft) dan hanya boleh menulis
+    //   dokumen yang bentuknya valid.
+    //
+    // Validasi di sini mengikat untuk PENULISAN. Pembacaan di sisi aplikasi
+    // (isValidProductRecord pada src/lib/product-record.ts) sengaja lebih
+    // longgar - dokumen dari Console yang kurang satu bahasa tetap ditampilkan
+    // dengan teks cadangan, bukan menghilang dari katalog.
+    match /products/{productId} {
+      allow read: if isAdmin() || resource.data.status == "published";
+      allow create, update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Fail closed: koleksi lain tidak dipakai aplikasi ini.
+    // Firestore tidak punya "deny" eksplisit - akses hanya diberikan oleh
+    // blok `allow` di atas, sehingga sisanya otomatis tertolak.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
