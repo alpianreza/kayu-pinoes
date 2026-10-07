@@ -306,6 +306,27 @@ export function sortByOrderForDisplay(products: ManagedProduct[]): ManagedProduc
 }
 
 /**
+ * Apakah isi form sudah berbeda dari nilai awal (deteksi "perubahan belum
+ * disimpan"). Dipakai untuk menentukan apakah dialog konfirmasi perlu
+ * ditampilkan saat editor ditutup.
+ */
+export function isFormDirty(current: ProductForm, initial: ProductForm): boolean {
+  return JSON.stringify(normalizeForDirtyCheck(current)) !== JSON.stringify(normalizeForDirtyCheck(initial));
+}
+
+function normalizeForDirtyCheck(form: ProductForm): ProductForm {
+  return {
+    ...form,
+    variants: [...form.variants].sort((a, b) => a.label.localeCompare(b.label)),
+    translations: {
+      id: { ...form.translations.id },
+      en: { ...form.translations.en },
+      ar: { ...form.translations.ar },
+    },
+  };
+}
+
+/**
  * Apakah aksi yang sedang berjalan berlaku untuk baris ini?
  *
  * Penanda aksi disimpan sebagai `jenis:documentId`. Pencocokan sebelumnya
@@ -325,11 +346,11 @@ export function toMessage(error: unknown): string {
   const code = typeof candidate.code === "string" ? candidate.code : "";
   const message = typeof candidate.message === "string" ? candidate.message : "";
 
-  if (code === "permission-denied") {
-    return "Akses menyimpan ditolak. Penyebab paling sering: aturan keamanannya belum dipasang di konsol Firebase (menu Firestore Database, tab Rules). Kalau sudah dipasang, cek apakah email yang kamu pakai masuk sama persis dengan email admin di berkas firestore.rules.";
+  if (code === "permission-denied" || code === "42501") {
+    return "Akses menyimpan ditolak. Pastikan kamu masuk dengan akun admin dan kebijakan Row Level Security (RLS) di Supabase sudah aktif untuk tabel terkait.";
   }
   if (code === "auth/configuration-not-found" || code === "CONFIGURATION_NOT_FOUND") {
-    return "Cara masuk pakai email belum diaktifkan. Buka konsol Firebase, masuk ke menu Authentication, lalu aktifkan metode Email & Password.";
+    return "Metode masuk email belum diaktifkan. Buka konsol Supabase → Authentication, lalu aktifkan penyedia Email.";
   }
   if (code === "auth/network-request-failed") {
     return "Tidak bisa menghubungi server. Cek koneksi internetmu, lalu coba lagi.";
@@ -340,13 +361,13 @@ export function toMessage(error: unknown): string {
   if (code === "auth/invalid-email") return "Email belum benar formatnya (contoh: nama@surel.com).";
   if (code === "auth/too-many-requests") return "Terlalu sering mencoba masuk. Tunggu sebentar, lalu coba lagi.";
   if (code === "auth/operation-not-allowed") {
-    return "Masuk dengan email belum diaktifkan. Buka konsol Firebase → Authentication → Sign-in method, lalu nyalakan Email & Password.";
+    return "Masuk dengan email belum diaktifkan. Buka konsol Supabase → Authentication dan aktifkan penyedia Email.";
   }
   if (code === "storage/bucket-not-found" || code === "storage/unknown") {
-    return "Penyimpanan foto belum aktif di proyek ini (paket gratis tidak menyertakannya). Taruh file fotonya di folder public/images, lalu tulis alamatnya di kolom yang tersedia.";
+    return "Bucket penyimpanan Supabase belum siap. Pastikan bucket foto produk tersedia dan kebijakan storage mengizinkan admin untuk mengunggah.";
   }
   if (code === "storage/unauthorized") {
-    return "Foto ditolak server. Pastikan kamu sudah masuk sebagai admin, filenya gambar, dan tidak lebih dari 5 MB.";
+    return "Foto ditolak server. Pastikan kamu sudah masuk sebagai admin, filenya gambar, dan ukurannya tidak lebih dari 5 MB.";
   }
   if (code === "storage/retry-limit-exceeded") return "Foto gagal terunggah atau terlalu lama. Cek koneksi lalu ulangi.";
   if (code === "unavailable") return "Server sedang tidak bisa dihubungi. Cek koneksi internetmu.";

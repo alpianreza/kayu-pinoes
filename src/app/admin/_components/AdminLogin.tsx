@@ -35,7 +35,7 @@ export function AdminLogin({
       >
         <h1 className="font-display text-3xl tracking-[-0.05em] text-[#294332]">Masuk sebagai admin</h1>
         <p className="mt-3 text-sm leading-6 text-[#6B766E]">
-          Masuk dengan email dan kata sandi yang kamu buat di konsol Firebase.
+          Masuk menggunakan email dan kata sandi akun Supabase Auth yang terdaftar sebagai admin.
         </p>
 
         {error ? (

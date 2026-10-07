@@ -171,8 +171,8 @@ export function isLocalImageSource(source: string): boolean {
 }
 
 /**
- * Foto bawaan untuk sebuah produk, dipakai sebagai fallback ketika dokumen
- * Firestore belum punya foto sendiri.
+ * Foto bawaan untuk sebuah produk, dipakai sebagai fallback ketika produk
+ * di database belum punya foto sendiri.
  */
 export function staticProductImage(productId: number): string | undefined {
   return productSeeds.find((seed) => seed.id === productId)?.imageUrl;

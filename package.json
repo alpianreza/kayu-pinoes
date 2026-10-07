@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/product-form.test.ts tests/product-record.test.ts tests/catalog-i18n.test.ts tests/catalogue.test.ts tests/product-image.test.ts tests/i18n.test.ts tests/product-admin-model.test.ts tests/age-display.test.ts tests/supabase-model.test.ts"
+    "test": "node --experimental-strip-types --test tests/product-form.test.ts tests/product-record.test.ts tests/catalog-i18n.test.ts tests/catalogue.test.ts tests/product-image.test.ts tests/i18n.test.ts tests/product-admin-model.test.ts tests/age-display.test.ts tests/supabase-model.test.ts tests/product-filtering.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

@@ -4,8 +4,10 @@ import { test } from "node:test";
 import {
   createEmptyForm,
   displayName,
+  formFromProduct,
   formToRecord,
   isBusyFor,
+  isFormDirty,
   productFormSchema,
   slugify,
   toRecord,
@@ -274,4 +276,117 @@ test("validateForm menolak varian tanpa nama", () => {
 
 test("createEmptyForm memulai tanpa varian", () => {
   assert.deepEqual(createEmptyForm([]).variants, []);
+});
+
+test("formFromProduct memetakan ManagedProduct menjadi form editor (jalur edit)", () => {
+  const product = managedProduct("5", 4);
+  product.slug = "produk-lima";
+  product.status = "draft";
+  product.imagePath = "produk/5/foto.png";
+  product.imageUrl = "https://cdn.example/produk/5/foto.png";
+  product.variants = [
+    { label: "Kecil", price: "Rp 100.000" },
+    { label: "Besar", price: "" },
+  ];
+
+  const form = formFromProduct(product);
+
+  assert.equal(form.id, "5");
+  assert.equal(form.slug, "produk-lima");
+  assert.equal(form.order, "4");
+  assert.equal(form.status, "draft");
+  assert.equal(form.imagePath, "produk/5/foto.png");
+  assert.equal(form.imageUrl, "https://cdn.example/produk/5/foto.png");
+  assert.deepEqual(form.variants, [
+    { label: "Kecil", price: "Rp 100.000" },
+    { label: "Besar", price: "" },
+  ]);
+  assert.equal(form.translations.id.name, "Produk 5");
+  assert.equal(form.translations.en.name, "Product 5");
+  assert.equal(form.translations.ar.name, "منتج 5");
+});
+
+test("formFromProduct mengisi field kosong untuk produk lama tanpa varian", () => {
+  const form = formFromProduct(managedProduct("7", 2));
+  assert.deepEqual(form.variants, []);
+  assert.equal(form.slug, "");
+  assert.equal(form.imagePath, "");
+  assert.equal(form.imageUrl, "");
+});
+
+test("createEmptyForm tidak menimpa terjemahan; field kosong rapi", () => {
+  const form = createEmptyForm([]);
+  assert.equal(form.id, "1");
+  assert.equal(form.order, "1");
+  assert.equal(form.status, "draft");
+  assert.deepEqual(form.translations.id, createEmptyTranslation());
+});
+
+test("formFromProduct mempertahankan terjemahan semua bahasa (ID/EN/AR)", () => {
+  const product = managedProduct("8", 3);
+  product.translations.en = { ...createEmptyTranslation(), name: "Wooden Puzzle", description: "Made of wood" };
+  product.translations.ar = { ...createEmptyTranslation(), name: "لغز خشبي", description: "مصنوع من الخشب" };
+  product.translations.id = { ...createEmptyTranslation(), name: "Puzzle Kayu", description: "Dibuat dari kayu" };
+
+  const form = formFromProduct(product);
+
+  assert.equal(form.translations.id.name, "Puzzle Kayu");
+  assert.equal(form.translations.en.name, "Wooden Puzzle");
+  assert.equal(form.translations.ar.name, "لغز خشبي");
+  assert.equal(form.translations.en.description, "Made of wood");
+  assert.equal(form.translations.ar.description, "مصنوع من الخشب");
+});
+
+test("validateForm meminta nama di setiap bahasa; field bahasa lain tidak hilang", () => {
+  const form = baseForm({
+    translations: {
+      id: { ...createEmptyTranslation(), name: "Ada" },
+      en: createEmptyTranslation(),
+      ar: { ...createEmptyTranslation(), name: "منتج" },
+    },
+  });
+
+  const errors = validateForm(form);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /EN/);
+
+  // Data bahasa lain tetap utuh setelah form melewati pemetaan record.
+  const record = formToRecord(form);
+  assert.equal(record.translations.id.name, "Ada");
+  assert.equal(record.translations.ar.name, "منتج");
+  assert.equal(record.translations.en.name, "");
+});
+
+test("formToRecord tidak menulis harga '0' - harga kosong tetap kosong", () => {
+  const record = formToRecord(
+    baseForm({
+      variants: [
+        { label: "Reguler", price: "" },
+        { label: "Kustom", price: "Rp 0" },
+      ],
+    }),
+  );
+
+  // 'Rp 0' memang isi teks admin sehingga tetap apa adanya; yang penting
+  // varian tanpa harga memang tersimpan sebagai string kosong, bukan angka 0.
+  assert.equal(record.variants?.[0].price, "");
+  assert.equal(record.variants?.[1].price, "Rp 0");
+});
+
+test("isFormDirty: form sama dengan awal dianggap belum berubah", () => {
+  const initial = baseForm({ id: "3" });
+  assert.equal(isFormDirty({ ...initial }, initial), false);
+});
+
+test("isFormDirty: perubahan nama, status, atau varian menandai perubahan belum disimpan", () => {
+  const initial = baseForm({ id: "3" });
+
+  const renamed = { ...initial, translations: { ...initial.translations, id: { ...initial.translations.id, name: "Nama Baru" } } };
+  assert.equal(isFormDirty(renamed, initial), true);
+
+  const republished = { ...initial, status: "published" as const };
+  assert.equal(isFormDirty(republished, initial), true);
+
+  const extraVariant = { ...initial, variants: [{ label: "S", price: "" }] };
+  assert.equal(isFormDirty(extraVariant, initial), true);
 });

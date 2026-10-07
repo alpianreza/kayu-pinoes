@@ -22,8 +22,8 @@ export function ProductDetailView({ slug }: { slug: string }) {
   // Chevron navigasi perlu diputar saat membaca dari kanan ke kiri.
   const chevronClass = language === "ar" ? "rotate-180" : undefined;
 
-  // Alamat dicari lewat slug; angka tetap diterima supaya dokumen Firestore
-  // yang memakai nama dokumen berupa angka tidak kehilangan halamannya.
+  // Alamat dicari lewat slug; angka tetap diterima supaya produk lama
+  // yang memakai ID numerik tidak kehilangan halamannya.
   const product =
     products.find((item) => item.slug === slug) ??
     products.find((item) => String(item.id) === slug) ??

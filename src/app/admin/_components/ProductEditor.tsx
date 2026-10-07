@@ -1,7 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ImageUp, X } from "lucide-react";
+import {
+  Globe,
+  ImageUp,
+  Layers,
+  Palette,
+  Sparkles,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useMemo, useState, type ChangeEvent } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
@@ -24,27 +33,20 @@ import {
   type ValidationOptions,
 } from "@/lib/product-form";
 
+import { ConfirmModal } from "./ConfirmModal";
 import { Notice } from "./Notice";
 import { TextField } from "./TextField";
 
-/**
- * Formulir produk.
- *
- * Nilai isian dipegang react-hook-form (uncontrolled - satu ketikan tidak
- * me-render ulang seluruh panel), sementara ATURAN bentuknya adalah skema Zod
- * yang sama (`productFormSchema`) dengan yang dipakai validateForm saat
- * menyimpan. Pesan galat tampil di bawah kolom masing-masing.
- *
- * `initialForm` dibaca sekali saat komponen dibuka; panel ini memang
- * di-mount ulang setiap kali editor dibuka, jadi tidak ada nilai sisa dari
- * produk sebelumnya.
- */
 export function ProductEditor({
   initialForm,
   validationOptions,
   editingDocumentId,
   saving,
   serverError,
+  categoryOptions = [],
+  ageOptions = [],
+  materialOptions = [],
+  finishingOptions = [],
   onUpload,
   onClose,
   onSubmit,
@@ -54,6 +56,10 @@ export function ProductEditor({
   editingDocumentId: string | null;
   saving: boolean;
   serverError: string | null;
+  categoryOptions?: string[];
+  ageOptions?: string[];
+  materialOptions?: string[];
+  finishingOptions?: string[];
   onUpload: (idValue: string, file: File) => Promise<{ imageUrl: string; imagePath: string }>;
   onClose: () => void;
   onSubmit: (record: ProductRecord) => Promise<void>;
@@ -61,9 +67,8 @@ export function ProductEditor({
   const [formLanguage, setFormLanguage] = useState<Language>("id");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
-  // Options divalidasi ulang saat snapshot produk berubah (ID/alamat milik
-  // produk lain bisa kapan saja bergeser saat editor masih terbuka).
   const schema = useMemo(() => productFormSchema(validationOptions), [validationOptions]);
 
   const {
@@ -72,30 +77,37 @@ export function ProductEditor({
     setValue,
     getValues,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProductForm>({
     defaultValues: initialForm,
     resolver: zodResolver(schema),
     mode: "onBlur",
   });
 
-  // Hanya field yang benar-benar mengubah tampilan panel yang di-watch;
-  // kolom teks biasa dibiarkan tidak terkontrol demi performa mengetik.
   const surface = useWatch({ name: "surface", control });
   const accent = useWatch({ name: "accent", control });
   const illustration = useWatch({ name: "illustration", control });
   const idValue = useWatch({ name: "id", control });
   const imageUrl = useWatch({ name: "imageUrl", control });
+  const statusValue = useWatch({ name: "status", control });
+  const watchedIdTranslation = useWatch({
+    name: "translations.id",
+    control,
+  }) as ProductForm["translations"]["id"] | undefined;
 
-  const documentId = idValue.trim();
-
-  // Baris varian dikelola react-hook-form supaya menambah/menghapus baris
-  // tidak mengacak nilai kolom lain.
   const {
     fields: variantFields,
     append: appendVariant,
     remove: removeVariant,
   } = useFieldArray({ control, name: "variants" });
+
+  const handleAttemptClose = () => {
+    if (isDirty) {
+      setShowUnsavedModal(true);
+    } else {
+      onClose();
+    }
+  };
 
   const save = handleSubmit((values) => onSubmit(formToRecord(values)));
 
@@ -125,312 +137,554 @@ export function ProductEditor({
   }
 
   return (
-    <section className="rounded-[2rem] border border-[#314B3A]/12 bg-white p-6 shadow-[0_18px_50px_rgba(49,75,58,0.08)] sm:p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 id="product-editor-title" className="font-display text-2xl tracking-[-0.045em] text-[#294332]">
-            {editingDocumentId ? `Ubah produk nomor ${idValue}` : "Produk baru"}
-          </h2>
-          <p className="mt-1 text-sm text-[#6B766E]">
-            Tersimpan dengan nomor{" "}
-            <code className="rounded bg-[#F1EFE7] px-1.5 py-0.5 text-[13px]">
-              {documentId || "(belum diisi)"}
-            </code>
-          </p>
-        </div>
-        <Button variant="ghost" size="icon" aria-label="Tutup" onClick={onClose}>
-          <X size={18} />
-        </Button>
-      </div>
-
-      {serverError || uploadError ? (
-        <div className="mt-5">
-          <Notice kind="error">{serverError ?? uploadError}</Notice>
-        </div>
-      ) : null}
-
-      <form onSubmit={save} noValidate>
-        <div className="mt-6 rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-4 sm:p-5">
-          <TextField
-            label="Alamat halaman"
-            error={errors.slug?.message}
-            hint={errors.slug ? undefined : "Alamat web produk ini, mis. namatoko.com/products/stacking-rainbow. Huruf kecil, angka, tanda hubung."}
-            register={register}
-            name="slug"
-          />
-          <Button
-            className="mt-3"
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() => setValue("slug", slugify(getValues("translations.id.name")), { shouldDirty: true })}
-          >
-            Buat dari nama
-          </Button>
-        </div>
-
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <TextField
-            label="Nomor produk"
-            register={register}
-            name="id"
-            disabled={editingDocumentId !== null}
-            error={errors.id?.message}
-            hint={
-              errors.id
-                ? undefined
-                : editingDocumentId !== null
-                  ? "Nomor ini tidak bisa diubah lagi setelah produk tersimpan."
-                  : "Pakai nomor yang belum dipakai produk lain."
-            }
-          />
-          <TextField
-            label="Urutan tampil"
-            register={register}
-            name="order"
-            error={errors.order?.message}
-            hint={errors.order ? undefined : "Angka lebih kecil tampil lebih dahulu."}
-          />
-          {/* Bukan <label>: isinya sekumpulan tombol pilihan, bukan satu isian. */}
-          <div className="block">
-            <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-              Status
-            </span>
-            <select
-              className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none transition focus:border-[#C76845] focus:ring-2 focus:ring-[#C76845]/25"
-              {...register("status")}
-            >
-              <option value="draft">Disimpan saja — belum dilihat pembeli</option>
-              <option value="published">Tampil di situs — dilihat pembeli</option>
-            </select>
+    <>
+      <section className="flex flex-col max-h-[90dvh] rounded-[2rem] border border-[#314B3A]/12 bg-white shadow-[0_24px_70px_rgba(49,75,58,0.14)] overflow-hidden">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#314B3A]/10 bg-[#FBF9F3]/95 px-6 py-4 backdrop-blur-md">
+          <div>
+            <h2 id="product-editor-title" className="font-display text-2xl tracking-[-0.045em] text-[#294332]">
+              {editingDocumentId ? `Edit Produk #${idValue}` : "Tambah Produk Baru"}
+            </h2>
+            <p className="text-xs font-semibold text-[#6B766E]">
+              {editingDocumentId
+                ? "Perbarui detail katalog dan terjemahan"
+                : "Isi data produk baru ke katalog Kayu Pinoes"}
+            </p>
           </div>
-          <div className="block">
-            <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-              Ilustrasi
-            </span>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5" role="group" aria-label="Ilustrasi">
-              {productIllustrations.map((option) => {
-                const selected = illustration === option;
 
-                return (
-                  <button
-                    key={option}
-                    aria-pressed={selected}
-                    className={`rounded-2xl border p-1.5 text-center transition focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#C76845] ${
-                      selected
-                        ? "border-[#C76845] bg-[#F9E7DF] ring-2 ring-[#C76845]/25"
-                        : "border-[#314B3A]/12 bg-white hover:border-[#314B3A]/30"
-                    }`}
-                    onClick={() => setValue("illustration", option, { shouldDirty: true })}
-                    type="button"
-                  >
-                    <span
-                      className="block aspect-square w-full overflow-hidden rounded-xl"
-                      style={{ backgroundColor: surface }}
-                    >
-                      <ToyArtwork illustration={option} />
-                    </span>
-                    <span
-                      className={`mt-1.5 block text-[11px] font-bold leading-tight ${
-                        selected ? "text-[#8A3F23]" : "text-[#536459]"
+          <div className="flex items-center gap-2">
+            <span
+              className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.1em] ${
+                statusValue === "published"
+                  ? "bg-[#DFEBDC] text-[#2F5236]"
+                  : "bg-[#F1EFE7] text-[#6B766E]"
+              }`}
+            >
+              {statusValue === "published" ? "Published" : "Draft"}
+            </span>
+            <Button variant="ghost" size="icon" aria-label="Tutup editor" onClick={handleAttemptClose}>
+              <X size={18} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 space-y-8">
+          {serverError || uploadError ? (
+            <Notice kind="error">{serverError ?? uploadError}</Notice>
+          ) : null}
+
+          {/* Section 1: Informasi Dasar & Slug */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Tag size={16} className="text-[#C76845]" />
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+                1. Informasi Dasar & Alamat URL
+              </h3>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <TextField
+                label="Nomor ID Produk"
+                register={register}
+                name="id"
+                disabled={editingDocumentId !== null}
+                error={errors.id?.message}
+                hint={editingDocumentId ? "ID permanen di database" : "Angka unik untuk produk ini"}
+              />
+
+              <div className="sm:col-span-2 space-y-2">
+                <TextField
+                  label="Alamat Halaman (Slug URL)"
+                  error={errors.slug?.message}
+                  hint="Alamat web produk: huruf kecil, angka, tanda hubung (mis. stacking-rainbow)"
+                  register={register}
+                  name="slug"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() =>
+                    setValue("slug", slugify(getValues("translations.id.name")), {
+                      shouldDirty: true,
+                    })
+                  }
+                >
+                  <Sparkles size={13} /> Buat slug otomatis dari nama Indonesia
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Konten Multibahasa */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-white p-5 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Globe size={16} className="text-[#314B3A]" />
+                <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+                  2. Konten Multibahasa
+                </h3>
+              </div>
+
+              {/* Language Switcher Tabs */}
+              <div className="flex items-center gap-1.5 rounded-full bg-[#EEF1E9] p-1">
+                {languageOptions.map((opt) => {
+                  const active = formLanguage === opt.code;
+                  return (
+                    <button
+                      key={opt.code}
+                      type="button"
+                      onClick={() => setFormLanguage(opt.code)}
+                      className={`rounded-full px-3.5 py-1 text-xs font-bold transition-all ${
+                        active
+                          ? "bg-[#314B3A] text-white shadow-xs"
+                          : "text-[#536459] hover:text-[#27372D]"
                       }`}
                     >
-                      {productIllustrationLabels[option]}
-                    </span>
-                  </button>
-                );
-              })}
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <span className="mt-2 block text-xs font-medium text-[#8A948C]">
-              Gambar cadangan bila produk belum difoto. Klik untuk memilih.
-            </span>
-          </div>
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-              Warna latar
-            </span>
-            <input
-              className="h-11 w-full cursor-pointer rounded-xl border border-[#314B3A]/15 bg-white px-2 outline-none transition focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#C76845]"
-              type="color"
-              {...register("surface")}
-            />
-            {errors.surface ? (
-              <span className="mt-1 block text-xs font-bold text-[#B23C22]">{errors.surface.message}</span>
-            ) : (
-              <span className="mt-1 block text-xs font-medium text-[#8A948C]">{surface}</span>
-            )}
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-              Warna aksen
-            </span>
-            <input
-              className="h-11 w-full cursor-pointer rounded-xl border border-[#314B3A]/15 bg-white px-2 outline-none transition focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#C76845]"
-              type="color"
-              {...register("accent")}
-            />
-            {errors.accent ? (
-              <span className="mt-1 block text-xs font-bold text-[#B23C22]">{errors.accent.message}</span>
-            ) : (
-              <span className="mt-1 block text-xs font-medium text-[#8A948C]">{accent}</span>
-            )}
-          </label>
-        </div>
 
-        <div className="mt-6 rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-4 sm:p-5">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">Varian & harga</p>
+            <p className="text-xs text-[#8A948C]">
+              Mengedit terjemahan dalam bahasa:{" "}
+              <strong>{languageOptions.find((l) => l.code === formLanguage)?.label}</strong>. Data
+              bahasa lain tidak akan hilang.
+            </p>
 
-          {variantFields.length > 0 ? (
-            <div className="mt-3 grid gap-3">
-              {variantFields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <TextField
-                      label="Nama varian"
-                      register={register}
-                      name={`variants.${index}.label`}
-                      error={errors.variants?.[index]?.label?.message}
-                      hint={index === 0 ? "mis. 3 cm" : undefined}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <TextField
-                      label="Harga"
-                      register={register}
-                      name={`variants.${index}.price`}
-                      hint={index === 0 ? "mis. $4 / 10 pcs - boleh dikosongkan" : undefined}
-                    />
-                  </div>
-                  <Button
-                    className="mb-1"
-                    variant="ghost"
-                    size="icon"
-                    type="button"
-                    aria-label="Hapus varian ini"
-                    onClick={() => removeVariant(index)}
-                  >
-                    <X size={16} />
-                  </Button>
+            <div
+              className={`grid gap-4 sm:grid-cols-2 ${
+                formLanguage === "ar" ? "text-right [direction:rtl]" : ""
+              }`}
+            >
+              {TRANSLATION_FIELDS.map((field) => (
+                <div key={field.key} className={field.multiline ? "sm:col-span-2" : undefined}>
+                  <TextField
+                    label={field.label}
+                    multiline={field.multiline}
+                    register={register}
+                    name={`translations.${formLanguage}.${field.key}`}
+                    error={errors.translations?.[formLanguage]?.[field.key]?.message}
+                  />
                 </div>
               ))}
             </div>
-          ) : null}
+          </div>
 
-          <Button
-            className="mt-3"
-            variant="outline"
-            size="sm"
-            type="button"
-            onClick={() => appendVariant({ label: "", price: "" })}
-          >
-            Tambah varian
-          </Button>
-
-          <p className="mt-3 text-xs leading-5 text-[#8A948C]">
-            Satu baris untuk tiap pilihan. Kalau harga belum ada, kosongkan saja - pembeli tetap
-            diarahkan ke WhatsApp.
-          </p>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-4 sm:p-5">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">Foto produk</p>
-          <div className="mt-3 flex flex-wrap items-center gap-4">
-            <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
-              {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="size-full object-cover" src={imageUrl} alt="" />
-              ) : (
-                <ImageUp size={22} className="text-[#8A948C]" />
-              )}
+          {/* Section 3: Kategori & Usia (Master Data) */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Layers size={16} className="text-[#314B3A]" />
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+                3. Kategori, Usia, Material & Finishing
+              </h3>
             </div>
-            <div className="grid gap-2">
-              <input
-                className="block w-full text-sm text-[#405047] file:mr-3 file:rounded-full file:border-0 file:bg-[#314B3A] file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
-                type="file"
-                accept="image/*"
-                onChange={handleImageFile}
-                disabled={uploading}
-              />
-              <span className="text-xs font-medium text-[#8A948C]">
-                {uploading
-                  ? " Sedang mengunggah..."
-                  : " Kalau fotonya diganti, foto lama ikut terhapus saat disimpan."}
-              </span>
-            </div>
-          </div>
-          {imageUrl ? (
-            <Button className="mt-4" variant="outline" size="sm" type="button" onClick={clearImage}>
-              Hapus foto dari produk ini
-            </Button>
-          ) : null}
-          <p className="mt-3 text-xs font-medium text-[#8A948C]">
-            Bentuknya file gambar, paling besar {Math.round(MAX_PRODUCT_IMAGE_BYTES / (1024 * 1024))} MB.
-          </p>
 
-          <div className="mt-4 border-t border-[#314B3A]/12 pt-4">
-            <TextField
-              label="Atau tulis alamat foto"
-              register={register}
-              name="imageUrl"
-              hint="Alamat file di situs ini, mis. /images/foto.png — atau alamat lengkap dari internet yang bisa dibuka siapa saja."
-            />
-            <p className="mt-3 text-xs leading-5 text-[#8A948C]">
-              Cara paling mudah dan gratis: letakkan file fotonya di folder
-              <code>public/images</code> pada proyek ini, lalu tulis alamatnya di kolom atas, misalnya{" "}
-              <code>/images/nama-file.png</code>. Tombol unggah di atas hanya perlu kalau kamu
-              menyimpan foto di luar folder itu.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-7">
-          <div className="flex flex-wrap items-center gap-2">
-            {languageOptions.map((option) => {
-              const active = formLanguage === option.code;
-              return (
-                <button
-                  key={option.code}
-                  className={`min-h-9 rounded-full px-4 text-xs font-black transition-colors ${
-                    active ? "bg-[#314B3A] text-white" : "bg-[#EEF1E9] text-[#536459] hover:text-[#314B3A]"
-                  }`}
-                  type="button"
-                  onClick={() => setFormLanguage(option.code)}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            {TRANSLATION_FIELDS.map((field) => (
-              <div key={field.key} className={field.multiline ? "sm:col-span-2" : undefined}>
-                <TextField
-                  label={field.label}
-                  multiline={field.multiline}
-                  register={register}
-                  name={`translations.${formLanguage}.${field.key}`}
-                  error={errors.translations?.[formLanguage]?.[field.key]?.message}
-                />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Category selector / fallback input */}
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                  Kategori Produk
+                </span>
+                {categoryOptions.length > 0 ? (
+                  <select
+                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+                    value={watchedIdTranslation?.category || ""}
+                    onChange={(e) =>
+                      setValue("translations.id.category", e.target.value, { shouldDirty: true })
+                    }
+                  >
+                    <option value="">— Pilih Kategori —</option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <TextField
+                    label=""
+                    register={register}
+                    name="translations.id.category"
+                    hint="Kategori (ID)"
+                  />
+                )}
               </div>
-            ))}
+
+              {/* Age Range selector */}
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                  Rentang Usia
+                </span>
+                {ageOptions.length > 0 ? (
+                  <select
+                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+                    value={watchedIdTranslation?.age || ""}
+                    onChange={(e) =>
+                      setValue("translations.id.age", e.target.value, { shouldDirty: true })
+                    }
+                  >
+                    <option value="">— Pilih Rentang Usia —</option>
+                    {ageOptions.map((age) => (
+                      <option key={age} value={age}>
+                        {age}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <TextField
+                    label=""
+                    register={register}
+                    name="translations.id.age"
+                    hint='Contoh: "1-4 tahun"'
+                  />
+                )}
+              </div>
+
+              {/* Material selector */}
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                  Jenis Kayu (Material)
+                </span>
+                {materialOptions.length > 0 ? (
+                  <select
+                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+                    value={watchedIdTranslation?.wood || ""}
+                    onChange={(e) =>
+                      setValue("translations.id.wood", e.target.value, { shouldDirty: true })
+                    }
+                  >
+                    <option value="">— Pilih Material —</option>
+                    {materialOptions.map((mat) => (
+                      <option key={mat} value={mat}>
+                        {mat}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <TextField
+                    label=""
+                    register={register}
+                    name="translations.id.wood"
+                    hint="Kayu Pinus, Mahoni, dll"
+                  />
+                )}
+              </div>
+
+              {/* Finishing selector */}
+              <div className="space-y-1.5">
+                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                  Finishing & Lapisan
+                </span>
+                {finishingOptions.length > 0 ? (
+                  <select
+                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+                    value={watchedIdTranslation?.finish || ""}
+                    onChange={(e) =>
+                      setValue("translations.id.finish", e.target.value, { shouldDirty: true })
+                    }
+                  >
+                    <option value="">— Pilih Finishing —</option>
+                    {finishingOptions.map((fin) => (
+                      <option key={fin} value={fin}>
+                        {fin}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <TextField
+                    label=""
+                    register={register}
+                    name="translations.id.finish"
+                    hint="Water-based, Beeswax, dll"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Visual, Ilustrasi & Palet Warna */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-white p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Palette size={16} className="text-[#C76845]" />
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+                4. Visual, Ilustrasi & Warna Kartu
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <span className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                  Pilih Ilustrasi Cadangan
+                </span>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="group" aria-label="Ilustrasi Produk">
+                  {productIllustrations.map((opt) => {
+                    const isSelected = illustration === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => setValue("illustration", opt, { shouldDirty: true })}
+                        className={`rounded-2xl border p-2 text-center transition ${
+                          isSelected
+                            ? "border-[#C76845] bg-[#F9E7DF] ring-2 ring-[#C76845]/25"
+                            : "border-[#314B3A]/12 bg-white hover:border-[#314B3A]/30"
+                        }`}
+                      >
+                        <span
+                          className="block aspect-square w-full overflow-hidden rounded-xl"
+                          style={{ backgroundColor: surface }}
+                        >
+                          <ToyArtwork illustration={opt} />
+                        </span>
+                        <span
+                          className={`mt-1.5 block text-xs font-bold ${
+                            isSelected ? "text-[#8A3F23]" : "text-[#536459]"
+                          }`}
+                        >
+                          {productIllustrationLabels[opt]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                    Warna Latar Kartu
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      className="size-11 cursor-pointer rounded-xl border border-[#314B3A]/15 bg-white p-1"
+                      {...register("surface")}
+                    />
+                    <span className="font-mono text-xs font-semibold text-[#536459]">{surface}</span>
+                  </div>
+                </label>
+
+                <label className="block space-y-1.5">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                    Warna Aksen Kartu
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      className="size-11 cursor-pointer rounded-xl border border-[#314B3A]/15 bg-white p-1"
+                      {...register("accent")}
+                    />
+                    <span className="font-mono text-xs font-semibold text-[#536459]">{accent}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: Varian & Harga */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+                5. Varian Produk & Informasi Harga
+              </h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => appendVariant({ label: "", price: "" })}
+              >
+                + Tambah Varian
+              </Button>
+            </div>
+
+            {variantFields.length === 0 ? (
+              <p className="text-xs text-[#8A948C]">
+                Produk ini tidak memiliki varian. Pembeli akan diarahkan dengan tombol WhatsApp &quot;Hubungi Kami&quot;.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {variantFields.map((field, idx) => (
+                  <div key={field.id} className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <TextField
+                        label={`Nama Varian ${idx + 1}`}
+                        register={register}
+                        name={`variants.${idx}.label`}
+                        error={errors.variants?.[idx]?.label?.message}
+                        hint={idx === 0 ? "Contoh: Natural / Pastel / 5 Pcs" : undefined}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <TextField
+                        label="Harga / Catatan Harga"
+                        register={register}
+                        name={`variants.${idx}.price`}
+                        hint={idx === 0 ? 'Contoh: "Rp 125.000" atau "$4 / set"' : undefined}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="mb-1 size-9 rounded-xl text-[#B23C22] hover:bg-[#F9E7DF]"
+                      onClick={() => removeVariant(idx)}
+                      aria-label={`Hapus varian ${idx + 1}`}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Section 6: Foto Produk & Storage */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-white p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <ImageUp size={16} className="text-[#314B3A]" />
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+                6. Foto Produk (Supabase Storage)
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-5">
+              <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[#314B3A]/15 bg-[#FBF9F3]">
+                {imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="size-full object-cover" src={imageUrl} alt="" />
+                ) : (
+                  <ImageUp size={28} className="text-[#8A948C]" />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageFile}
+                  disabled={uploading}
+                  className="block w-full text-xs text-[#536459] file:mr-3 file:rounded-full file:border-0 file:bg-[#314B3A] file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
+                />
+                <p className="text-xs text-[#8A948C]">
+                  {uploading
+                    ? "Sedang mengunggah ke bucket Storage 'produk'…"
+                    : `Format JPG, PNG, WebP. Maksimal ${Math.round(
+                        MAX_PRODUCT_IMAGE_BYTES / (1024 * 1024)
+                      )} MB.`}
+                </p>
+
+                {imageUrl ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-[#B23C22]"
+                    onClick={clearImage}
+                  >
+                    Hapus Foto Produk
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#314B3A]/8">
+              <TextField
+                label="Atau URL Foto Langsung"
+                register={register}
+                name="imageUrl"
+                hint="Alamat URL foto publik atau path di folder public (mis. /images/produk.jpg)"
+              />
+            </div>
+          </div>
+
+          {/* Section 7: Status & Urutan */}
+          <div className="rounded-2xl border border-[#314B3A]/12 bg-[#F7F5EE] p-5 space-y-4">
+            <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+              7. Publikasi & Urutan Tampil
+            </h3>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                  Status Publikasi
+                </span>
+                <select
+                  className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+                  {...register("status")}
+                >
+                  <option value="draft">Disimpan saja (Draft) — Belum tampil di situs</option>
+                  <option value="published">Tampil di situs (Published) — Dilihat pembeli</option>
+                </select>
+              </div>
+
+              <TextField
+                label="Posisi Urutan Tampil"
+                register={register}
+                name="order"
+                error={errors.order?.message}
+                hint="Angka lebih kecil akan tampil lebih dahulu di katalog"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button type="submit" disabled={saving || uploading}>
-            {saving ? "Menyimpan..." : "Simpan produk"}
-          </Button>
-          <Button variant="outline" onClick={onClose} disabled={saving} type="button">
+        {/* Sticky Action Footer */}
+        <div className="sticky bottom-0 z-20 flex items-center justify-between border-t border-[#314B3A]/10 bg-[#FBF9F3]/95 px-6 py-4 backdrop-blur-md">
+          <Button type="button" variant="outline" size="sm" onClick={handleAttemptClose}>
             Batal
           </Button>
-        </div>
-      </form>
 
-      <p className="mt-5 text-xs leading-5 text-[#8A948C]">
-        Aturan keamanan yang sebenarnya ada di database (policy RLS proyek Supabase). Validasi di halaman
-        ini hanya mengingatkan kalau ada kolom yang belum diisi.
-      </p>
-    </section>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={saving || uploading}
+              onClick={() => {
+                setValue("status", "draft", { shouldDirty: true });
+                void save();
+              }}
+            >
+              Simpan Draft
+            </Button>
+
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              disabled={saving || uploading}
+              onClick={() => {
+                setValue("status", "published", { shouldDirty: true });
+                void save();
+              }}
+            >
+              {saving ? "Menyimpan…" : "Simpan & Tampilkan"}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Confirmation Modal for Unsaved Changes */}
+      <ConfirmModal
+        isOpen={showUnsavedModal}
+        variant="warning"
+        title="Perubahan belum disimpan"
+        description="Kamu telah melakukan perubahan pada formulir ini. Jika ditutup sekarang, seluruh perubahan yang belum disimpan akan hilang."
+        confirmLabel="Buang Perubahan & Tutup"
+        cancelLabel="Tetap Lanjutkan Edit"
+        onConfirm={() => {
+          setShowUnsavedModal(false);
+          onClose();
+        }}
+        onCancel={() => setShowUnsavedModal(false)}
+      />
+    </>
   );
 }
