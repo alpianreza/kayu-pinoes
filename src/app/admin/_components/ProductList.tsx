@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { type ManagedProduct } from "@/lib/firebase-products";
+import { type ManagedProduct } from "@/lib/supabase-products";
 import { displayName, isBusyFor } from "@/lib/product-form";
 
 export function ProductList({

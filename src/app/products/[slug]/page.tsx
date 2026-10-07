@@ -3,7 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { ProductDetailView } from "@/components/site/ProductDetailView";
 import { getLocalizedProducts } from "@/lib/catalog-i18n";
-import { getPublishedFirebaseProducts } from "@/lib/firebase-products";
+import { getPublishedProducts } from "@/lib/supabase-products";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates } from "@/lib/locale-metadata";
 import { productSeeds, productSlugs, staticProductSlug, type Product } from "@/lib/products";
@@ -21,23 +21,22 @@ export function generateStaticParams() {
 export const revalidate = 300;
 
 /**
- * Cari produk berdasarkan alamat, dari katalog bawaan lalu dari Firestore.
+ * Cari produk berdasarkan alamat, dari katalog bawaan lalu dari server data.
  *
  * Sebelumnya halaman ini hanya mengenali alamat katalog bawaan dan menolak
  * sisanya dengan 404 - akibatnya produk yang dibuat admin tidak pernah bisa
- * dibuka, walaupun kartunya tampil di katalog. Dokumen Firestore hanya berisi
- * produk berstatus published, dan query-nya sudah difilter seperti yang
- * dituntut security rules, jadi aman dipanggil tanpa login.
+ * dibuka, walaupun kartunya tampil di katalog. Aturan RLS hanya membuka
+ * produk berstatus published untuk pengunjung, jadi aman dipanggil tanpa login.
  */
 async function findProduct(slug: string): Promise<Product | null> {
   const staticProduct = getLocalizedProducts(DEFAULT_LANGUAGE).find((item) => item.slug === slug);
   if (staticProduct) return staticProduct;
 
   try {
-    const firestoreProducts = await getPublishedFirebaseProducts(DEFAULT_LANGUAGE);
-    return firestoreProducts.find((item) => item.slug === slug) ?? null;
+    const serverProducts = await getPublishedProducts(DEFAULT_LANGUAGE);
+    return serverProducts.find((item) => item.slug === slug) ?? null;
   } catch {
-    // Firestore tidak bisa dihubungi: alamat tak dikenal dianggap tidak ada,
+    // Server data tidak bisa dihubungi: alamat tak dikenal dianggap tidak ada,
     // dan halaman bawaan tetap dilayani seperti biasa.
     return null;
   }
@@ -87,8 +86,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     if (niceSlug) permanentRedirect(`/products/${niceSlug}`);
   }
 
-  // Angka yang tidak ada di katalog bawaan tetap diteruskan: dokumen Firestore
-  // memakai string angka sebagai nama dokumen, dan itu diselesaikan di sisi klien.
+  // Angka yang tidak ada di katalog bawaan tetap diteruskan: halaman detail
+  // menyelesaikannya sendiri di sisi klien.
   if (!/^\d+$/.test(slug)) {
     const known = productSeeds.some((seed) => seed.slug === slug) || (await findProduct(slug));
     if (!known) notFound();

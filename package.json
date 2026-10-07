@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/product-form.test.ts tests/product-record.test.ts tests/catalog-i18n.test.ts tests/catalogue.test.ts tests/product-image.test.ts tests/i18n.test.ts tests/product-admin-model.test.ts"
+    "test": "node --experimental-strip-types --test tests/product-form.test.ts tests/product-record.test.ts tests/catalog-i18n.test.ts tests/catalogue.test.ts tests/product-image.test.ts tests/i18n.test.ts tests/product-admin-model.test.ts tests/age-display.test.ts tests/supabase-model.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -17,7 +17,6 @@
     "@supabase/supabase-js": "^2.117.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "firebase": "^12.19.0",
     "lucide-react": "^1.47.0",
     "next": "16.3.6",
     "nuqs": "^2.10.1",

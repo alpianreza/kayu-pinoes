@@ -3,21 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getLocalizedProducts, type Language } from "@/lib/catalog-i18n";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   getLocalizedProduct,
   subscribeToPublishedProducts,
   type ManagedProduct,
-} from "@/lib/firebase-products";
+} from "@/lib/supabase-products";
 
-export type CatalogueSource = "statis" | "firestore";
+export type CatalogueSource = "statis" | "supabase";
 
 /**
  * Sumber produk untuk katalog dan halaman detail.
  *
  * Mulai dari katalog statis supaya HTML pertama sudah berisi produk (dan halaman
- * tetap benar tanpa Firebase), lalu naik ke Firestore begitu dokumen tersedia.
- * Bila Firestore gagal atau kosong, katalog statis yang dipakai.
+ * tetap benar tanpa server data), lalu naik ke Supabase begitu dokumennya
+ * tersedia. Bila server data gagal atau kosong, katalog statis yang dipakai.
  */
 export function useCatalogue(language: Language = "id"): {
   products: ReturnType<typeof getLocalizedProducts>;
@@ -26,7 +26,7 @@ export function useCatalogue(language: Language = "id"): {
   const [managed, setManaged] = useState<ManagedProduct[] | null>(null);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return;
+    if (!isSupabaseConfigured) return;
 
     return subscribeToPublishedProducts(
       (next) => setManaged(next),
@@ -36,7 +36,7 @@ export function useCatalogue(language: Language = "id"): {
 
   const staticProducts = useMemo(() => getLocalizedProducts(language), [language]);
 
-  const firestoreProducts = useMemo(
+  const serverProducts = useMemo(
     () =>
       (managed ?? [])
         .filter((product) => product.status === "published")
@@ -44,9 +44,9 @@ export function useCatalogue(language: Language = "id"): {
     [language, managed],
   );
 
-  if (firestoreProducts.length === 0) {
+  if (serverProducts.length === 0) {
     return { products: staticProducts, source: "statis" };
   }
 
-  return { products: firestoreProducts, source: "firestore" };
+  return { products: serverProducts, source: "supabase" };
 }
