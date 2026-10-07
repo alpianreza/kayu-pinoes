@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { getLocalizedProducts } from "@/lib/catalog-i18n";
-import { getPublishedFirebaseProducts } from "@/lib/firebase-products";
+import { getPublishedProducts } from "@/lib/supabase-products";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates } from "@/lib/locale-metadata";
 
@@ -9,7 +9,7 @@ import { languageAlternates } from "@/lib/locale-metadata";
  * Peta situs dibangun dari NEXT_PUBLIC_SITE_URL. Bila variabel itu belum diisi,
  * sitemap sengaja kosong alih-alih memakai alamat karangan.
  *
- * Produk diambil dari Firestore bila tersedia (supaya produk buatan admin ikut
+ * Produk diambil dari server data bila tersedia (supaya produk buatan admin ikut
  * terpetakan), dengan katalog bawaan sebagai cadangan. Setiap alamat
  * menyertakan ketiga versinya lewat `?lang=`, sama seperti hreflang di halaman.
  */
@@ -17,13 +17,13 @@ async function collectProductSlugs(base: string): Promise<MetadataRoute.Sitemap>
   let products: Array<{ slug: string }> = getLocalizedProducts(DEFAULT_LANGUAGE);
 
   try {
-    const firestoreProducts = await getPublishedFirebaseProducts(DEFAULT_LANGUAGE);
-    if (firestoreProducts.length > 0) products = firestoreProducts;
+    const supabaseProducts = await getPublishedProducts(DEFAULT_LANGUAGE);
+    if (supabaseProducts.length > 0) products = supabaseProducts;
   } catch {
-    // Firestore tidak terjangkau saat build; pakai katalog bawaan.
+    // Server data tidak terjangkau saat build; pakai katalog bawaan.
   }
 
-  // Katalog bawaan dan Firestore bisa memuat slug yang sama.
+  // Katalog bawaan dan server data bisa memuat slug yang sama.
   const seen = new Set<string>();
 
   return products

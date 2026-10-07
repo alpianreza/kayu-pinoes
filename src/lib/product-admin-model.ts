@@ -1,18 +1,17 @@
 import type { ManagedProduct, ProductRecord } from "./product-record.ts";
 
 /**
- * Bagian murni dari lapisan admin produk - tanpa koneksi Firebase - supaya
- * bisa diuji langsung (`firebase-product-admin.ts` mengimpor modul firebase
- * yang tidak bisa berjalan di Node).
+ * Bagian murni dari lapisan admin produk - tanpa koneksi server data -
+ * supaya bisa diuji langsung di Node tanpa klien basis data.
  */
 
-/** Document ID Firestore untuk satu ID produk: angka yang ditulis sebagai teks. */
+/** Document ID untuk satu ID produk: angka yang ditulis sebagai teks. */
 export function productDocumentId(productId: number): string {
   return String(productId);
 }
 
 /**
- * Buang `documentId` ( metadata Firestore, bukan bagian dokumen ) dan simpan
+ * Buang `documentId` ( metadata internal, bukan bagian data produk ) dan simpan
  * SEMUA field data produk.
  *
  * Dulu fungsi ini menjatuhkan `slug`, sehingga menukar urutan produk lewat
@@ -38,8 +37,8 @@ export function stripDocumentId(product: ManagedProduct): ProductRecord {
 /**
  * Apakah imagePath menunjuk ke berkas hasil unggahan aplikasi ini?
  *
- * storage.rules hanya mengizinkan path `products/{nama}`; path lain (mis.
- * kosong, atau nilai manual admin) tidak boleh dicoba hapus.
+ * Hanya path `products/{nama}` (hasil unggahan aplikasi) yang boleh dicoba
+ * hapus; path lain (mis. kosong, atau nilai manual admin) tidak disentuh.
  */
 export function isStorageImagePath(imagePath: string | undefined | null): boolean {
   return Boolean(imagePath && /^products\/[^/]+$/.test(imagePath));

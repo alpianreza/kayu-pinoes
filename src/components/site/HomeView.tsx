@@ -24,12 +24,12 @@ import { ProductVariants } from "@/components/site/ProductVariants";
 import { ProductSlideshow } from "@/components/site/ProductSlideshow";
 import { ToyArtwork } from "@/components/site/ToyArtwork";
 import { getLocalizedProducts, translations } from "@/lib/catalog-i18n";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   getLocalizedProduct,
   subscribeToPublishedProducts,
   type ManagedProduct,
-} from "@/lib/firebase-products";
+} from "@/lib/supabase-products";
 import type { Product } from "@/lib/products";
 
 const categoryStyles = [
@@ -122,14 +122,14 @@ export function HomeView() {
   const detailCellClasses = isRtl ? "odd:pl-4 even:border-r even:pr-4" : "odd:pr-4 even:border-l even:pl-4";
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return;
+    if (!isSupabaseConfigured) return;
 
-    // Katalog dari Firestore. Bila Firebase belum dikonfigurasi, koleksi masih
-    // kosong, atau terjadi error, halaman tetap memakai produk bawaan.
+    // Katalog dari server data (Supabase). Bila belum dikonfigurasi, koleksi
+    // masih kosong, atau terjadi error, halaman tetap memakai produk bawaan.
     const unsubscribe = subscribeToPublishedProducts(
       (nextProducts) => setManagedProducts(nextProducts),
       (error) => {
-        console.warn("Katalog Firestore tidak dapat dibaca, memakai produk bawaan.", error);
+        console.warn("Katalog dari server data tidak dapat dibaca, memakai produk bawaan.", error);
         setManagedProducts([]);
       },
     );

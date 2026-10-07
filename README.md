@@ -1,161 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kayu Pinoes — Situs Katalog Mainan Kayu
 
-## Getting Started
+Situs katalog mainan kayu (beranda, katalog, halaman produk, tentang, kontak)
+dengan pemesanan lewat WhatsApp dan panel admin untuk mengelola produk.
+Tampil dalam tiga bahasa: Indonesia, English, dan العربية.
 
-First, run the development server:
+## Teknologi
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+| Bagian | Teknologi |
+|---|---|
+| Kerangka aplikasi | Next.js (App Router, TypeScript, Tailwind CSS) |
+| Katalog & panel admin | Supabase — PostgreSQL, Auth (email/sandi), Storage (foto) |
+| Pemesanan | WhatsApp (tanpa keranjang / pembayaran online) |
+| Keamanan data | Row Level Security (RLS) — lihat `supabase/migrations/004_rls.sql` |
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Bila Supabase belum dikonfigurasi, situs tetap berjalan memakai katalog bawaan
+statis di `src/lib/products.ts` (`isSupabaseConfigured` di `src/lib/supabase.ts`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
----
-
-## Firebase
-
-Proyek ini memakai Firebase untuk tiga hal:
-
-| Bagian | Layanan | Kode |
-|---|---|---|
-| Katalog produk (baca) | Cloud Firestore, koleksi `products` | `src/lib/firebase-products.ts` |
-| Kelola produk (tulis + unggah foto) | Firestore + Cloud Storage | `src/lib/firebase-product-admin.ts`, `src/app/admin/page.tsx` |
-| Login admin | Firebase Authentication (Email/Password) | `src/app/admin/page.tsx` |
-
-Selama kredensial belum diisi, situs tetap berjalan normal memakai katalog statis di
-`src/lib/products.ts` — Firebase akan diabaikan sepenuhnya (lihat `isFirebaseConfigured`
-di `src/lib/firebase.ts`).
-
-### 1. Environment variable
-
-Salin `.env.example` menjadi `.env.local`, lalu isi:
-
-```
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-NEXT_PUBLIC_ADMIN_EMAIL=
-```
-
-Enam nilai pertama diambil dari Firebase Console → Project settings → General →
-Your apps → Web app (`</>`) → SDK setup and configuration → Config.
-Karena semua diawali `NEXT_PUBLIC_`, nilai ini memang terkirim ke browser — perlakukan
-security rules sebagai satu-satunya penjaga data, bukan kerahasiaan config.
-
-Jalankan ulang `npm run dev` / build setelah mengubah `.env.local`.
-
-### 2. Admin
-
-1. `firestore.rules` dan `storage.rules` sudah memuat email admin proyek ini secara
-   literal (`alpianrezha@gmail.com`). Security Rules tidak bisa membaca environment
-   variable, jadi bila email admin berganti, nilai literal di KEDUA berkas rules itu
-   wajib diubah agar tetap sama persis dengan `NEXT_PUBLIC_ADMIN_EMAIL`
-   (huruf kecil semua — perbandingannya case-sensitive).
-2. Di Firebase Console → Authentication → Sign-in method, aktifkan **Email/Password**.
-3. Buat akun admin di Firebase Console → Authentication → Users.
-4. Buka `/admin`, masuk dengan akun tersebut.
-
-> Catatan penting: `firestore.rules` dan `storage.rules` di repo ini adalah sumber
-> kebenaran. Rules yang terpasang di Firebase Console bisa saja masih versi lama —
-> deploy ulang sesudah setiap perubahan (bagian 3).
-
-### 3. Deploy rules & hosting
+## Menjalankan lokal
 
 ```bash
-# ganti placeholder project id lebih dulu (.firebaserc), atau:
-npx firebase-tools use --add
-
-npx firebase-tools deploy --only firestore:rules,storage
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-`firebase.json` juga menyiapkan blok `hosting` (`source: "."`,
-`frameworksBackend.region: asia-southeast2`) untuk Next.js. Untuk memakainya,
-aktifkan dukungan Web Frameworks lebih dulu:
+Perintah lain:
 
 ```bash
-npx firebase-tools experiments:enable webframeworks
-npx firebase-tools deploy --only hosting
+npm run typecheck  # tsc --noEmit
+npm run lint
+npm test           # node --test (95+ tes)
+npm run build
+npm run start      # mode produksi
 ```
 
-### 4. Skema koleksi `products`
+Salin `.env.example` menjadi `.env.local` lalu isi nilainya (tabel di bawah),
+lalu jalankan ulang server setelah mengubahnya.
 
-Document ID = string dari `id` (mis. `"1"`).
+## Environment variable
 
-```jsonc
-{
-  "id": 1,                       // number, juga dipakai sebagai document ID
-  "slug": "stacking-rainbow",    // opsional, alamat /products/{slug}; huruf kecil + tanda hubung
-  "surface": "#F9E2BE",          // warna latar kartu
-  "accent": "#D88653",           // warna aksen
-  "illustration": "rainbow",     // mainan | rainbow | car | blocks | puzzle | hewan | boneka | menara | musik | jam
-  "status": "published",         // draft | published
-  "order": 1,                    // urutan tampil (kecil = lebih dahulu)
-  "imageUrl": "https://...",     // opsional, hasil unggahan Storage
-  "imagePath": "products/1-...", // opsional, path di Storage
-  "translations": {
-    "id": { "name": "...", "category": "...", "age": "...", "description": "...",
-            "wood": "...", "dimensions": "...", "finish": "...", "contents": "...", "care": "..." },
-    "en": { /* ... */ },
-    "ar": { /* ... */ }
-  }
-}
+| Nama | Isi |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL — Supabase Dashboard → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key — halaman yang sama |
+| `NEXT_PUBLIC_ADMIN_EMAIL` | Email admin (huruf kecil). Untuk gerbang tampilan; hak akses nyata ada di tabel `admin_users` |
+| `NEXT_PUBLIC_SITE_URL` | Alamat publik situs untuk sitemap/robots (mis. `https://kayu-pinoes.netlify.app`) |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Nomor WhatsApp format internasional tanpa `+`, mis. `62896220222910` |
+
+Semua nilai `NEXT_PUBLIC_*` terkirim ke browser — keamanan dijaga oleh RLS di
+database, bukan oleh kerahasiaan kunci anon.
+
+## Database (Supabase)
+
+Skema relasional ada di `supabase/migrations/` — jalankan berurutan di
+Supabase → SQL Editor:
+
+| Berkas | Isi |
+|---|---|
+| `001_initial_schema.sql` | Tabel inti: produk, terjemahan, kategori, rentang usia, material, finishing, varian, harga, foto, admin |
+| `002_seed_reference.sql` | Bahasa, mata uang, kategori, rentang usia, material, finishing |
+| `003_seed_products.sql` | 8 produk bawaan + seluruh relasinya |
+| `004_rls.sql` | RLS + policy semua tabel, fungsi `is_admin()`, RPC `upsert_product` / `delete_product` / `swap_product_order`, trigger admin |
+| `005_storage.sql` | Bucket foto `produk` + policy (publik baca; admin tulis) |
+
+`supabase/pasang-awal.sql` adalah gabungan seluruh berkas di atas untuk
+pemasangan sekali jalan (aman dijalankan ulang).
+
+### Akun admin
+
+1. Supabase Dashboard → **Authentication → Users → Add user** — daftarkan
+   email yang sama dengan `NEXT_PUBLIC_ADMIN_EMAIL` beserta kata sandi.
+2. Trigger `bootstrap_admin` (di `004_rls.sql`) otomatis memasukkan email itu
+   ke tabel `admin_users` — tabel itulah sumber kebenaran hak admin.
+3. Masuk ke `/admin` memakai akun tersebut.
+
+### Foto produk
+
+- Foto bawaan ada di `public/images/products/` dan tetap dipakai (path
+  `/images/...` disimpan apa adanya di `product_images.storage_path`).
+- Unggahan baru dari panel admin masuk ke Supabase Storage bucket `produk`
+  (gambar saja, maksimal 5 MB, lihat `005_storage.sql`).
+
+## Struktur singkat
+
+```
+src/app            halaman (App Router) + /admin + /api
+src/components     komponen situs & panel admin
+src/lib            klien Supabase, pemetaan data, validasi, i18n
+supabase/          migration & pemasangan database
+tests/             tes node (95+)
 ```
 
-Hanya dokumen berstatus `published` yang tampil di halaman publik.
-`firestore.rules` menolak penulisan dengan field di luar daftar di atas, dan
-menuntut ketiga bahasa lengkap sembilan kunci — jadi dokumen yang dibuat manual
-di Console bisa ditolak saat disimpan ulang lewat `/admin` kalau isinya kurang.
+## Deploy
 
-Produk yang alamatnya tidak ada di katalog bawaan (mis. buatan admin) dilayani
-secara dinamis: halamannya dirender saat diminta lalu di-cache 5 menit, jadi
-alamatnya langsung bisa dibuka tanpa build ulang.
-
-### 5. Endpoint API
-
-`GET /api/products` mengembalikan produk `published` dari Firestore, dengan
-fallback ke katalog statis. Respons: `{ "data": [...], "source": "firestore" | "static" }`.
-
-### 6. Foto produk tanpa Firebase Storage
-
-Cloud Storage tidak termasuk paket gratis, jadi upload langsung ke Storage
-memerlukan plan Blaze. Kalau belum mau upgrade, foto produk tetap bisa dipakai
-tanpa biaya sama sekali:
-
-1. Taruh berkas gambar di folder `public/images/` pada proyek ini.
-2. Di panel `/admin`, isi kolom **URL atau path foto** dengan path lokalnya,
-   misalnya `/images/mobil-kiko.png` (awali dengan garis miring).
-
-Nilai itu juga boleh berupa URL lengkap dari layanan lain, misalnya
-`https://situs-anda.com/foto.png`. Path lokal diproses `next/image`; URL luar
-ditampilkan apa adanya sehingga tidak perlu menambah `remotePatterns`.
-
-Tombol upload ke Storage tetap ada dan akan berfungsi begitu project memakai
-plan Blaze.
+Target produksi: Netlify (paket gratis). Setelah deploy, isi environment
+variable yang sama di dashboard Netlify dan arahkan `NEXT_PUBLIC_SITE_URL` ke
+alamat situs yang sebenarnya.

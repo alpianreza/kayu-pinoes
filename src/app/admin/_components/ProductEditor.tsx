@@ -8,11 +8,11 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { ToyArtwork } from "@/components/site/ToyArtwork";
 import { Button } from "@/components/ui/button";
 import { languageOptions, type Language } from "@/lib/catalog-i18n";
-import { MAX_PRODUCT_IMAGE_BYTES } from "@/lib/firebase-product-admin";
+import { MAX_PRODUCT_IMAGE_BYTES } from "@/lib/supabase-product-admin";
 import {
   productIllustrationLabels,
   productIllustrations,
-} from "@/lib/firebase-products";
+} from "@/lib/supabase-products";
 import { type ProductRecord } from "@/lib/product-record";
 import {
   TRANSLATION_FIELDS,
@@ -428,8 +428,7 @@ export function ProductEditor({
       </form>
 
       <p className="mt-5 text-xs leading-5 text-[#8A948C]">
-        Aturan keamanan yang sebenarnya ada di berkas <code className="rounded bg-[#F1EFE7] px-1.5 py-0.5">firestore.rules</code>{" "}
-        dan <code className="mx-1 rounded bg-[#F1EFE7] px-1.5 py-0.5">storage.rules</code>. Validasi di halaman
+        Aturan keamanan yang sebenarnya ada di database (policy RLS proyek Supabase). Validasi di halaman
         ini hanya mengingatkan kalau ada kolom yang belum diisi.
       </p>
     </section>

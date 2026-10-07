@@ -10,15 +10,10 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  type User,
-} from "firebase/auth";
+import type { User } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
-import { firebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
+import { isSupabaseConfigured, supabaseClient } from "@/lib/supabase";
 import { staticProductSlug } from "@/lib/products";
 import type { ProductRecord } from "@/lib/product-record";
 import {
@@ -29,13 +24,13 @@ import {
   saveProductRecord,
   swapProductOrder,
   uploadProductImage,
-} from "@/lib/firebase-product-admin";
+} from "@/lib/supabase-product-admin";
 import {
-  getPublishedFirebaseProducts,
+  getPublishedProducts,
   subscribeToManagedProducts,
   type ManagedProduct,
   type ProductStatus,
-} from "@/lib/firebase-products";
+} from "@/lib/supabase-products";
 import {
   createEmptyForm,
   formFromProduct,
@@ -54,14 +49,27 @@ import { ProductList } from "./_components/ProductList";
 
 const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").trim().toLowerCase();
 
+/** Pesan kesalahan masuk yang ramah untuk kesalahan Supabase Auth yang umum. */
+function signInErrorMessage(error: { message?: string }): string {
+  const raw = (error.message ?? "").toLowerCase();
+
+  if (raw.includes("invalid login credentials")) return "Email atau kata sandi salah.";
+  if (raw.includes("email not confirmed")) return "Email belum dikonfirmasi - cek kotak masuk emailmu.";
+  if (raw.includes("rate limit") || raw.includes("too many")) {
+    return "Terlalu banyak percobaan masuk. Tunggu sebentar, lalu coba lagi.";
+  }
+
+  return error.message || "Gagal masuk. Coba lagi.";
+}
+
 type PublicCatalogStatus =
   | { state: "checking" }
-  | { state: "firestore"; count: number }
+  | { state: "supabase"; count: number }
   | { state: "static"; detail: string | null };
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(!isFirebaseConfigured);
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -113,16 +121,19 @@ export default function AdminPage() {
     (user?.email ?? "").trim().toLowerCase() === ADMIN_EMAIL;
 
   useEffect(() => {
-    // Bila Firebase belum dikonfigurasi, `authReady` sudah bernilai true sejak
+    // Bila Supabase belum dikonfigurasi, `authReady` sudah bernilai true sejak
     // inisialisasi state, jadi tidak ada yang perlu dilakukan di sini.
-    if (!isFirebaseConfigured || !firebaseAuth) return;
+    const client = supabaseClient();
+    if (!client) return;
 
-    const auth = firebaseAuth;
-
-    return onAuthStateChanged(auth, (nextUser) => {
-      setUser(nextUser);
+    // Supabase mengirim event INITIAL_SESSION begitu langganan dimulai, lalu
+    // setiap perubahan sesi (masuk, keluar, token disegarkan).
+    const { data } = client.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
       setAuthReady(true);
     });
+
+    return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -145,15 +156,15 @@ export default function AdminPage() {
     if (!isAdmin) return;
 
     // Pemeriksaan sekali jalan: apakah halaman publik benar-benar memakai
-    // Firestore, atau diam-diam jatuh ke katalog statis?
+    // server data (Supabase), atau diam-diam jatuh ke katalog statis?
     let active = true;
 
-    getPublishedFirebaseProducts("id")
+    getPublishedProducts("id")
       .then((items) => {
         if (!active) return;
         setPublicCatalog(
           items.length > 0
-            ? { state: "firestore", count: items.length }
+            ? { state: "supabase", count: items.length }
             : {
                 state: "static",
                 detail:
@@ -181,29 +192,38 @@ export default function AdminPage() {
   async function handleSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!firebaseAuth) return;
+    const client = supabaseClient();
+    if (!client) return;
 
     setSigningIn(true);
     setAuthError(null);
 
     try {
-      await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const { error } = await client.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setAuthError(signInErrorMessage(error));
+        return;
+      }
+
       setPassword("");
-    } catch (error) {
-      setAuthError(toMessage(error));
     } finally {
       setSigningIn(false);
     }
   }
 
   async function handleSignOut() {
-    if (!firebaseAuth) return;
+    const client = supabaseClient();
+    if (!client) return;
 
     // Editor ikut ditutup lewat jalur biasa, jadi beres-beres berkas dan
     // pemulihan fokus ditangani efek penutupan editor.
     closeEditor();
     setNotice(null);
-    await signOut(firebaseAuth);
+    await client.auth.signOut();
   }
 
   // Options validasi dihitung ulang setiap snapshot produk berubah, supaya
@@ -332,11 +352,11 @@ export default function AdminPage() {
    * ProductEditor sudah memvalidasi lewat skema Zod yang sama (pesan per
    * kolom); pemeriksaan di sini adalah penjaga terakhir - murah dan menjamin
    * tidak ada jalur lain (mis. submit keyboard saat React belum selesai
-   * me-resolver) yang mengirim record cacat ke Firestore.
+   * me-resolver) yang mengirim record cacat ke server data.
    */
   async function handleSave(record: ProductRecord) {
     // Bentuk ulang record menjadi versi formulir agar bisa diperiksa dengan
-    // skema yang sama - penjaga terakhir sebelum menulis ke Firestore.
+    // skema yang sama - penjaga terakhir sebelum menulis ke server data.
     const formForCheck: ProductForm = {
       id: String(record.id),
       slug: record.slug ?? "",
@@ -362,10 +382,10 @@ export default function AdminPage() {
     setNotice(null);
 
     try {
-      // Menyimpan hasil edit memakai setDoc(merge: false) yang MENIMPA seluruh
-      // dokumen - dan membuat dokumen baru kalau ternyata sudah dihapus dari
-      // perangkat lain. Diperiksa dulu supaya produk yang sudah dihapus tidak
-      // hidup lagi dari form yang tertinggal terbuka di layar ini.
+      // Menyimpan hasil edit MENIMPA seluruh data produk - dan membuat produk
+      // baru kalau ternyata sudah dihapus dari perangkat lain. Diperiksa dulu
+      // supaya produk yang sudah dihapus tidak hidup lagi dari form yang
+      // tertinggal terbuka di layar ini.
       const documentId = productDocumentId(record.id);
       if (editingDocumentId !== null && !(await productDocumentExists(documentId))) {
         setFormError(
@@ -504,15 +524,15 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {!isFirebaseConfigured ? <NotConfiguredScreen /> : null}
+      {!isSupabaseConfigured ? <NotConfiguredScreen /> : null}
 
-      {isFirebaseConfigured && !authReady ? (
+      {isSupabaseConfigured && !authReady ? (
         <p className="mx-auto max-w-3xl px-5 py-16 text-center text-sm font-bold text-[#6B766E] sm:px-8">
           Memeriksa status login…
         </p>
       ) : null}
 
-      {isFirebaseConfigured && authReady && !user ? (
+      {isSupabaseConfigured && authReady && !user ? (
         <AdminLogin
           email={email}
           password={password}
@@ -524,7 +544,7 @@ export default function AdminPage() {
         />
       ) : null}
 
-      {isFirebaseConfigured && user && !isAdmin ? (
+      {isSupabaseConfigured && user && !isAdmin ? (
         <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8">
           <div className="rounded-[2rem] border border-[#C76845]/25 bg-[#F9E7DF] p-7 sm:p-9">
             <h1 className="font-display text-3xl tracking-[-0.05em] text-[#8A3F23]">Akun ini bukan admin</h1>
@@ -534,7 +554,7 @@ export default function AdminPage() {
             <p className="mt-3 text-sm leading-6 text-[#8A3F23]">
               {ADMIN_EMAIL.length === 0
                 ? "Email admin belum diisi di berkas .env.local, jadi tidak ada akun yang diakui sebagai admin. Isi nilainya, jalankan ulang server, lalu masuk lagi."
-                : `Email admin yang diakui: ${ADMIN_EMAIL}. Pastikan sama persis dengan yang tertulis di berkas firestore.rules dan storage.rules.`}
+                : `Email admin yang diakui: ${ADMIN_EMAIL}. Daftar admin resmi ada di tabel admin_users pada database.`}
             </p>
             <Button className="mt-6" variant="outline" onClick={handleSignOut}>
               <LogOut size={16} /> Keluar
@@ -567,7 +587,7 @@ export default function AdminPage() {
             Yang dilihat pembeli:{" "}
             {publicCatalog.state === "checking" ? (
               <span className="text-[#8A948C]">memeriksa…</span>
-            ) : publicCatalog.state === "firestore" ? (
+            ) : publicCatalog.state === "supabase" ? (
               <span className="text-[#2F5236]">
                 situs sedang menampilkan {publicCatalog.count} produk
               </span>
