@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import { OrderButton } from "@/components/site/OrderButton";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductImage } from "@/components/site/ProductImage";
+import { ProductSlideshow, type SlideImage } from "@/components/site/ProductSlideshow";
 import { ProductVariants } from "@/components/site/ProductVariants";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -52,6 +53,14 @@ export function ProductDetailView({ slug }: { slug: string }) {
 
   const others = products.filter((item) => item.id !== product.id).slice(0, 3);
 
+  // Galeri foto: semua gambar produk jadi slide; bila belum ada daftar
+  // (produk lama), gambar utama lama yang dipakai. Gambar pertama ditata
+  // di depan supaya jadi slide pembuka.
+  const gallery: SlideImage[] = (product.images?.length ? product.images : product.imageUrl ? [{ imageUrl: product.imageUrl, sortOrder: 0, isPrimary: true }] : [])
+    .filter((image) => image.imageUrl.trim().length > 0)
+    .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary) || a.sortOrder - b.sortOrder)
+    .map((image) => ({ src: image.imageUrl, alt: product.name }));
+
   const specs: Array<[string, string]> = [
     [copy.specs.age, product.age],
     [copy.specs.wood, product.wood],
@@ -96,13 +105,17 @@ export function ProductDetailView({ slug }: { slug: string }) {
               className="relative aspect-square overflow-hidden rounded-[2rem] border border-[#314B3A]/10"
               style={{ backgroundColor: product.surface }}
             >
-              {product.imageUrl ? (
-                <ProductImage
-                  src={product.imageUrl}
-                  alt={product.name}
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
+              {gallery.length > 0 ? (
+                gallery.length > 1 ? (
+                  <ProductSlideshow images={gallery} label={product.name} />
+                ) : (
+                  <ProductImage
+                    src={gallery[0].src}
+                    alt={gallery[0].alt}
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                )
               ) : (
                 <div className="grid size-full place-items-center">
                   <span

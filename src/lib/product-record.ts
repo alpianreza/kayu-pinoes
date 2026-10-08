@@ -4,6 +4,7 @@ import {
   staticProductImage,
   staticProductSlug,
   type Product,
+  type ProductImageItem,
   type ProductIllustration,
   type ProductVariant,
 } from "./products.ts";
@@ -39,6 +40,8 @@ export type ProductRecord = {
   imagePath?: string;
   /** Daftar varian dengan harga opsional. Opsional supaya dokumen lama tetap sah. */
   variants?: ProductVariant[];
+  /** Galeri foto produk; `isPrimary` menentukan gambar utama (`imageUrl`). */
+  images?: ProductImageItem[];
   status: ProductStatus;
   order: number;
 };
@@ -91,6 +94,31 @@ export function normalizeVariants(value: unknown): ProductVariant[] {
 }
 
 /**
+ * Saring daftar gambar galeri agar aman dirender: entri tanpa `imageUrl`
+ * dibuang; `sortOrder` dinormalisasi jadi angka. Urutan tidak diurutkan di
+ * sini - pemetaan baris (`supabase-model`) sudah menyusunnya.
+ */
+export function normalizeImages(value: unknown): ProductImageItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item, index) => {
+    if (!isPlainObject(item)) return [];
+
+    const imageUrl = typeof item.imageUrl === "string" ? item.imageUrl.trim() : "";
+    if (imageUrl.length === 0) return [];
+
+    const imagePath = typeof item.imagePath === "string" && item.imagePath.trim().length > 0
+      ? item.imagePath.trim()
+      : undefined;
+    const sortOrder = Number.isFinite(Number(item.sortOrder))
+      ? Number(item.sortOrder)
+      : index;
+
+    return [{ imageUrl, ...(imagePath ? { imagePath } : {}), sortOrder, isPrimary: Boolean(item.isPrimary) }];
+  });
+}
+
+/**
  * Validasi runtime dokumen Firestore.
  *
  * Dokumen bisa dibuat dari Console, oleh versi UI yang lebih lama, atau saat
@@ -125,6 +153,7 @@ export function isValidProductRecord(value: unknown): value is ProductRecord {
   // Varian cukup dicek bentuk daftarnya; baris yang cacat disaring oleh
   // normalizeVariants supaya satu baris rusak tidak menjatuhkan produk.
   if (value.variants !== undefined && !Array.isArray(value.variants)) return false;
+  if (value.images !== undefined && !Array.isArray(value.images)) return false;
 
   return true;
 }
@@ -169,6 +198,7 @@ export function getLocalizedProduct(product: ProductRecord, language: Language):
       accent: product.accent,
       illustration: product.illustration,
       imageUrl: product.imageUrl ?? staticProductImage(product.id),
+      images: normalizeImages(product.images),
       variants: normalizeVariants(product.variants),
     };
   }
@@ -182,6 +212,7 @@ export function getLocalizedProduct(product: ProductRecord, language: Language):
       accent: product.accent || staticProduct.accent,
       illustration: product.illustration ?? staticProduct.illustration,
       imageUrl: product.imageUrl ?? staticProduct.imageUrl,
+      images: normalizeImages(product.images ?? staticProduct.images),
       variants: normalizeVariants(product.variants),
     };
   }
@@ -194,6 +225,7 @@ export function getLocalizedProduct(product: ProductRecord, language: Language):
     accent: product.accent,
     illustration: product.illustration,
     imageUrl: product.imageUrl ?? staticProductImage(product.id),
+    images: normalizeImages(product.images),
     variants: normalizeVariants(product.variants),
   };
 }

@@ -27,6 +27,21 @@ export type ProductVariant = {
 };
 
 /**
+ * Satu foto dalam galeri produk.
+ *
+ * `imageUrl` adalah alamat yang bisa ditampilkan (URL publik atau path lokal),
+ * sedangkan `imagePath` hanya diisi bila foto berasal dari bucket Storage
+ * (`products/...`) - nilai inilah yang boleh dihapus saat galeri diubah.
+ * Gambar utama ditandai `isPrimary`; sisanya diurutkan `sortOrder`.
+ */
+export type ProductImageItem = {
+  imageUrl: string;
+  imagePath?: string;
+  sortOrder: number;
+  isPrimary: boolean;
+};
+
+/**
  * Nama yang ditampilkan di panel admin. Ilustrasi ini hanya dipakai sebagai
  * pengganti sementara untuk produk yang belum punya foto - begitu produk
  * punya foto, ilustrasi tidak pernah terlihat pengunjung.
@@ -65,6 +80,8 @@ export type Product = {
   accent: string;
   illustration: ProductIllustration;
   imageUrl?: string;
+  /** Galeri foto produk; gambar pertama/`isPrimary` menjadi `imageUrl`. */
+  images?: ProductImageItem[];
   /** Varian produk (mis. ukuran) dengan harga opsional; kosong bila tidak ada. */
   variants?: ProductVariant[];
 };

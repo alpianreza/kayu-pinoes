@@ -16,16 +16,25 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
 import { ToyArtwork } from "@/components/site/ToyArtwork";
 import { Button } from "@/components/ui/button";
+import { formatAgeRange } from "@/lib/age-display";
 import { languageOptions, type Language } from "@/lib/catalog-i18n";
+import {
+  type MasterAgeRange,
+  type MasterCategory,
+  type MasterFinishing,
+  type MasterMaterial,
+} from "@/lib/supabase-admin-master";
 import { MAX_PRODUCT_IMAGE_BYTES } from "@/lib/supabase-product-admin";
 import {
   productIllustrationLabels,
   productIllustrations,
 } from "@/lib/supabase-products";
 import { type ProductRecord } from "@/lib/product-record";
+import { type ProductImageItem } from "@/lib/products";
 import {
   TRANSLATION_FIELDS,
   formToRecord,
+  primaryImageFromList,
   productFormSchema,
   slugify,
   toMessage,
@@ -37,6 +46,160 @@ import { ConfirmModal } from "./ConfirmModal";
 import { Notice } from "./Notice";
 import { TextField } from "./TextField";
 
+const MASTER_DATA_FIELDS = ["category", "age", "wood", "finish"] as const;
+
+type CareOptions = Record<Language, string[]>;
+type MasterDataField = (typeof MASTER_DATA_FIELDS)[number];
+type MasterDataItem =
+  | MasterCategory
+  | MasterAgeRange
+  | MasterMaterial
+  | MasterFinishing;
+
+function isAgeRange(item: MasterDataItem): item is MasterAgeRange {
+  return "min_months" in item;
+}
+
+function isMasterDataField(field: string): field is MasterDataField {
+  return MASTER_DATA_FIELDS.some((masterField) => masterField === field);
+}
+
+function masterValue(item: MasterDataItem, field: MasterDataField): string {
+  if (field === "age" && isAgeRange(item)) {
+    return formatAgeRange(item.min_months, item.max_months, "id");
+  }
+
+  if (!isAgeRange(item)) {
+    const fallback = "slug" in item ? item.slug : item.code;
+    return item.translations.id || fallback;
+  }
+
+  return "";
+}
+
+function masterLabel(item: MasterDataItem, field: MasterDataField, language: Language): string {
+  if (field === "age" && isAgeRange(item)) {
+    return formatAgeRange(item.min_months, item.max_months, language);
+  }
+
+  if (!isAgeRange(item)) {
+    const fallback = "slug" in item ? item.slug : item.code;
+    return item.translations[language] || item.translations.id || fallback;
+  }
+
+  return "";
+}
+
+function MasterDataSelect({
+  label,
+  options,
+  field,
+  language,
+  value,
+  error,
+  placeholder,
+  onPick,
+}: {
+  label: string;
+  options: MasterDataItem[];
+  field: MasterDataField;
+  language: Language;
+  value: string;
+  error?: string;
+  placeholder: string;
+  onPick: (item: MasterDataItem | undefined) => void;
+}) {
+  const selectedValue =
+    options.find((item) => masterLabel(item, field, language) === value)
+      ? masterValue(
+          options.find((item) => masterLabel(item, field, language) === value)!,
+          field,
+        )
+      : value;
+  const isLegacyValue =
+    value.trim().length > 0 &&
+    !options.some((item) => masterLabel(item, field, language) === value);
+
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+        {label}
+      </span>
+      <select
+        className={`w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none transition focus:border-[#C76845] focus:ring-2 focus:ring-[#C76845]/25${
+          error ? " border-[#C0503A] ring-1 ring-[#C0503A]/30" : ""
+        }`}
+        value={selectedValue}
+        aria-invalid={error ? true : undefined}
+        onChange={(event) =>
+          onPick(options.find((item) => masterValue(item, field) === event.target.value))
+        }
+      >
+        <option value="">{placeholder}</option>
+        {isLegacyValue ? (
+          <option value={value} disabled>
+            {value} (data lama)
+          </option>
+        ) : null}
+        {options.map((item) => {
+          const optionValue = masterValue(item, field);
+          return (
+            <option key={optionValue} value={optionValue}>
+              {masterLabel(item, field, language)}
+            </option>
+          );
+        })}
+      </select>
+      {error ? <span className="mt-1 block text-xs font-bold text-[#B23C22]">{error}</span> : null}
+    </label>
+  );
+}
+
+function CareDropdown({
+  label,
+  options,
+  value,
+  error,
+  onPick,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  error?: string;
+  onPick: (value: string) => void;
+}) {
+  const isLegacyValue = value.trim().length > 0 && !options.includes(value);
+
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+        {label}
+      </span>
+      <select
+        className={`w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none transition focus:border-[#C76845] focus:ring-2 focus:ring-[#C76845]/25${
+          error ? " border-[#C0503A] ring-1 ring-[#C0503A]/30" : ""
+        }`}
+        value={value}
+        aria-invalid={error ? true : undefined}
+        onChange={(event) => onPick(event.target.value)}
+      >
+        <option value="">— Pilih Saran Perawatan —</option>
+        {isLegacyValue ? (
+          <option value={value} disabled>
+            {value} (data lama)
+          </option>
+        ) : null}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+      {error ? <span className="mt-1 block text-xs font-bold text-[#B23C22]">{error}</span> : null}
+    </label>
+  );
+}
+
 export function ProductEditor({
   initialForm,
   validationOptions,
@@ -47,6 +210,7 @@ export function ProductEditor({
   ageOptions = [],
   materialOptions = [],
   finishingOptions = [],
+  careOptions,
   onUpload,
   onClose,
   onSubmit,
@@ -56,10 +220,11 @@ export function ProductEditor({
   editingDocumentId: string | null;
   saving: boolean;
   serverError: string | null;
-  categoryOptions?: string[];
-  ageOptions?: string[];
-  materialOptions?: string[];
-  finishingOptions?: string[];
+  categoryOptions?: MasterCategory[];
+  ageOptions?: MasterAgeRange[];
+  materialOptions?: MasterMaterial[];
+  finishingOptions?: MasterFinishing[];
+  careOptions?: CareOptions;
   onUpload: (idValue: string, file: File) => Promise<{ imageUrl: string; imagePath: string }>;
   onClose: () => void;
   onSubmit: (record: ProductRecord) => Promise<void>;
@@ -68,6 +233,7 @@ export function ProductEditor({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [manualImageUrl, setManualImageUrl] = useState("");
 
   const schema = useMemo(() => productFormSchema(validationOptions), [validationOptions]);
 
@@ -88,12 +254,14 @@ export function ProductEditor({
   const accent = useWatch({ name: "accent", control });
   const illustration = useWatch({ name: "illustration", control });
   const idValue = useWatch({ name: "id", control });
-  const imageUrl = useWatch({ name: "imageUrl", control });
   const statusValue = useWatch({ name: "status", control });
-  const watchedIdTranslation = useWatch({
-    name: "translations.id",
+  const watchedImages = useWatch({ name: "images", control }) as ProductForm["images"] | undefined;
+  const watchedTranslations = useWatch({
+    name: "translations",
     control,
-  }) as ProductForm["translations"]["id"] | undefined;
+  }) as ProductForm["translations"] | undefined;
+  const watchedIdTranslation = watchedTranslations?.id;
+  const watchedCurrentTranslation = watchedTranslations?.[formLanguage];
 
   const {
     fields: variantFields,
@@ -111,18 +279,34 @@ export function ProductEditor({
 
   const save = handleSubmit((values) => onSubmit(formToRecord(values)));
 
-  async function handleImageFile(event: ChangeEvent<HTMLInputElement>) {
+  async function handleImageFiles(event: ChangeEvent<HTMLInputElement>) {
     const input = event.target;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    if (files.length === 0) return;
 
     setUploading(true);
     setUploadError(null);
 
     try {
-      const uploaded = await onUpload(idValue, file);
-      setValue("imageUrl", uploaded.imageUrl, { shouldDirty: true });
-      setValue("imagePath", uploaded.imagePath, { shouldDirty: true });
+      let currentImages: ProductImageItem[] = (getValues("images") ?? []).filter((image) =>
+        image.imageUrl.trim().length > 0,
+      );
+
+      for (const file of files) {
+        const uploaded = await onUpload(idValue, file);
+        currentImages = [
+          ...currentImages,
+          {
+            imageUrl: uploaded.imageUrl,
+            imagePath: uploaded.imagePath || undefined,
+            sortOrder: currentImages.length,
+            isPrimary: currentImages.length === 0,
+          },
+        ];
+        syncPrimaryImageFields(currentImages);
+      }
+
+      setValue("images", currentImages, { shouldDirty: true });
     } catch (error) {
       setUploadError(toMessage(error));
     } finally {
@@ -131,9 +315,66 @@ export function ProductEditor({
     }
   }
 
-  function clearImage() {
-    setValue("imageUrl", "", { shouldDirty: true });
-    setValue("imagePath", "", { shouldDirty: true });
+  function syncPrimaryImageFields(images: ProductImageItem[]) {
+    const primary = primaryImageFromList(images);
+    setValue("imageUrl", primary.imageUrl, { shouldDirty: true });
+    setValue("imagePath", primary.imagePath, { shouldDirty: true });
+  }
+
+  function removeImage(index: number) {
+    const currentImages = getValues("images") ?? [];
+    const nextImages = currentImages.filter((_, position) => position !== index);
+
+    // Jika gambar yang dihapus adalah gambar utama dan masih ada gambar
+    // lain, angkat gambar pertama yang tersisa menjadi utama.
+    const wasPrimary = currentImages[index]?.isPrimary;
+    const adjusted =
+      wasPrimary && nextImages.length > 0
+        ? nextImages.map((image, position) => ({ ...image, isPrimary: position === 0 }))
+        : nextImages;
+
+    syncPrimaryImageFields(adjusted);
+    setValue("images", adjusted, { shouldDirty: true });
+  }
+
+  function makeImagePrimary(index: number) {
+    const currentImages = getValues("images") ?? [];
+    const nextImages = currentImages.map((image, position) => ({
+      ...image,
+      isPrimary: position === index,
+    }));
+
+    syncPrimaryImageFields(nextImages);
+    setValue("images", nextImages, { shouldDirty: true });
+  }
+
+  function addManualImageUrl(url: string) {
+    const currentImages = getValues("images") ?? [];
+    const nextImages: ProductImageItem[] = [
+      ...currentImages,
+      {
+        imageUrl: url,
+        sortOrder: currentImages.length,
+        isPrimary: currentImages.length === 0,
+      },
+    ];
+
+    syncPrimaryImageFields(nextImages);
+    setValue("images", nextImages, { shouldDirty: true });
+  }
+
+  function applyMasterSelection(field: MasterDataField, item: MasterDataItem | undefined) {
+    for (const language of ["id", "en", "ar"] as const) {
+      const value = item ? masterLabel(item, field, language) : "";
+      setValue(`translations.${language}.${field}`, value, { shouldDirty: true });
+    }
+  }
+
+  function masterOptionsFor(field: MasterDataField): MasterDataItem[] {
+    if (field === "category") return categoryOptions;
+    if (field === "age") return ageOptions;
+    if (field === "wood") return materialOptions;
+    return finishingOptions;
   }
 
   return (
@@ -257,21 +498,73 @@ export function ProductEditor({
             </p>
 
             <div
+              key={formLanguage}
               className={`grid gap-4 sm:grid-cols-2 ${
                 formLanguage === "ar" ? "text-right [direction:rtl]" : ""
               }`}
             >
-              {TRANSLATION_FIELDS.map((field) => (
-                <div key={field.key} className={field.multiline ? "sm:col-span-2" : undefined}>
-                  <TextField
-                    label={field.label}
-                    multiline={field.multiline}
-                    register={register}
-                    name={`translations.${formLanguage}.${field.key}`}
-                    error={errors.translations?.[formLanguage]?.[field.key]?.message}
-                  />
-                </div>
-              ))}
+              {TRANSLATION_FIELDS.map((field) => {
+                if (isMasterDataField(field.key)) {
+                  const masterKey = field.key;
+                  const masterOptions = masterOptionsFor(masterKey);
+                  if (masterOptions.length > 0) {
+                    const currentLabel = watchedCurrentTranslation?.[masterKey] ?? "";
+                    return (
+                      <div key={field.key} className={field.multiline ? "sm:col-span-2" : undefined}>
+                        <MasterDataSelect
+                          label={field.label}
+                          options={masterOptions}
+                          field={masterKey}
+                          language={formLanguage}
+                          value={currentLabel}
+                          error={errors.translations?.[formLanguage]?.[masterKey]?.message}
+                          placeholder={
+                            masterKey === "category"
+                              ? "— Pilih Kategori —"
+                              : masterKey === "age"
+                                ? "— Pilih Rentang Usia —"
+                                : masterKey === "wood"
+                                  ? "— Pilih Material —"
+                                  : "— Pilih Finishing —"
+                          }
+                          onPick={(item) => applyMasterSelection(masterKey, item)}
+                        />
+                      </div>
+                    );
+                  }
+                }
+
+                if (field.key === "care" && careOptions && careOptions[formLanguage]?.length > 0) {
+                  const currentCare = watchedCurrentTranslation?.care ?? "";
+                  return (
+                    <div key={field.key} className={field.multiline ? "sm:col-span-2" : undefined}>
+                      <CareDropdown
+                        label={field.label}
+                        options={careOptions[formLanguage]}
+                        value={currentCare}
+                        error={errors.translations?.[formLanguage]?.[field.key]?.message}
+                        onPick={(selectedCare) =>
+                          setValue(`translations.${formLanguage}.care`, selectedCare, {
+                            shouldDirty: true,
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={field.key} className={field.multiline ? "sm:col-span-2" : undefined}>
+                    <TextField
+                      label={field.label}
+                      multiline={field.multiline}
+                      register={register}
+                      name={`translations.${formLanguage}.${field.key}`}
+                      error={errors.translations?.[formLanguage]?.[field.key]?.message}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -286,28 +579,20 @@ export function ProductEditor({
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Category selector / fallback input */}
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-                  Kategori Produk
-                </span>
-                {categoryOptions.length > 0 ? (
-                  <select
-                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+              <div>
+                {masterOptionsFor("category").length > 0 ? (
+                  <MasterDataSelect
+                    label="Kategori Produk"
+                    options={masterOptionsFor("category")}
+                    field="category"
+                    language="id"
                     value={watchedIdTranslation?.category || ""}
-                    onChange={(e) =>
-                      setValue("translations.id.category", e.target.value, { shouldDirty: true })
-                    }
-                  >
-                    <option value="">— Pilih Kategori —</option>
-                    {categoryOptions.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="— Pilih Kategori —"
+                    onPick={(item) => applyMasterSelection("category", item)}
+                  />
                 ) : (
                   <TextField
-                    label=""
+                    label="Kategori Produk"
                     register={register}
                     name="translations.id.category"
                     hint="Kategori (ID)"
@@ -316,28 +601,20 @@ export function ProductEditor({
               </div>
 
               {/* Age Range selector */}
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-                  Rentang Usia
-                </span>
-                {ageOptions.length > 0 ? (
-                  <select
-                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+              <div>
+                {masterOptionsFor("age").length > 0 ? (
+                  <MasterDataSelect
+                    label="Rentang Usia"
+                    options={masterOptionsFor("age")}
+                    field="age"
+                    language="id"
                     value={watchedIdTranslation?.age || ""}
-                    onChange={(e) =>
-                      setValue("translations.id.age", e.target.value, { shouldDirty: true })
-                    }
-                  >
-                    <option value="">— Pilih Rentang Usia —</option>
-                    {ageOptions.map((age) => (
-                      <option key={age} value={age}>
-                        {age}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="— Pilih Rentang Usia —"
+                    onPick={(item) => applyMasterSelection("age", item)}
+                  />
                 ) : (
                   <TextField
-                    label=""
+                    label="Rentang Usia"
                     register={register}
                     name="translations.id.age"
                     hint='Contoh: "1-4 tahun"'
@@ -346,28 +623,20 @@ export function ProductEditor({
               </div>
 
               {/* Material selector */}
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-                  Jenis Kayu (Material)
-                </span>
-                {materialOptions.length > 0 ? (
-                  <select
-                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+              <div>
+                {masterOptionsFor("wood").length > 0 ? (
+                  <MasterDataSelect
+                    label="Jenis Kayu (Material)"
+                    options={masterOptionsFor("wood")}
+                    field="wood"
+                    language="id"
                     value={watchedIdTranslation?.wood || ""}
-                    onChange={(e) =>
-                      setValue("translations.id.wood", e.target.value, { shouldDirty: true })
-                    }
-                  >
-                    <option value="">— Pilih Material —</option>
-                    {materialOptions.map((mat) => (
-                      <option key={mat} value={mat}>
-                        {mat}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="— Pilih Material —"
+                    onPick={(item) => applyMasterSelection("wood", item)}
+                  />
                 ) : (
                   <TextField
-                    label=""
+                    label="Jenis Kayu (Material)"
                     register={register}
                     name="translations.id.wood"
                     hint="Kayu Pinus, Mahoni, dll"
@@ -376,28 +645,20 @@ export function ProductEditor({
               </div>
 
               {/* Finishing selector */}
-              <div className="space-y-1.5">
-                <span className="block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
-                  Finishing & Lapisan
-                </span>
-                {finishingOptions.length > 0 ? (
-                  <select
-                    className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none focus:border-[#C76845]"
+              <div>
+                {masterOptionsFor("finish").length > 0 ? (
+                  <MasterDataSelect
+                    label="Finishing & Lapisan"
+                    options={masterOptionsFor("finish")}
+                    field="finish"
+                    language="id"
                     value={watchedIdTranslation?.finish || ""}
-                    onChange={(e) =>
-                      setValue("translations.id.finish", e.target.value, { shouldDirty: true })
-                    }
-                  >
-                    <option value="">— Pilih Finishing —</option>
-                    {finishingOptions.map((fin) => (
-                      <option key={fin} value={fin}>
-                        {fin}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="— Pilih Finishing —"
+                    onPick={(item) => applyMasterSelection("finish", item)}
+                  />
                 ) : (
                   <TextField
-                    label=""
+                    label="Finishing & Lapisan"
                     register={register}
                     name="translations.id.finish"
                     hint="Water-based, Beeswax, dll"
@@ -554,53 +815,107 @@ export function ProductEditor({
               </h3>
             </div>
 
-            <div className="flex flex-wrap items-center gap-5">
-              <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl border border-[#314B3A]/15 bg-[#FBF9F3]">
-                {imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="size-full object-cover" src={imageUrl} alt="" />
-                ) : (
-                  <ImageUp size={28} className="text-[#8A948C]" />
-                )}
-              </div>
-
+            <div className="space-y-4">
               <div className="space-y-2">
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleImageFile}
+                  multiple
+                  onChange={handleImageFiles}
                   disabled={uploading}
                   className="block w-full text-xs text-[#536459] file:mr-3 file:rounded-full file:border-0 file:bg-[#314B3A] file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
                 />
                 <p className="text-xs text-[#8A948C]">
                   {uploading
                     ? "Sedang mengunggah ke bucket Storage 'produk'…"
-                    : `Format JPG, PNG, WebP. Maksimal ${Math.round(
+                    : `Pilih satu atau beberapa foto. Format JPG, PNG, WebP. Maksimal ${Math.round(
                         MAX_PRODUCT_IMAGE_BYTES / (1024 * 1024)
-                      )} MB.`}
+                      )} MB per foto.`}
                 </p>
-
-                {imageUrl ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-xs text-[#B23C22]"
-                    onClick={clearImage}
-                  >
-                    Hapus Foto Produk
-                  </Button>
-                ) : null}
               </div>
-            </div>
 
-            <div className="pt-3 border-t border-[#314B3A]/8">
-              <TextField
-                label="Atau URL Foto Langsung"
-                register={register}
-                name="imageUrl"
-                hint="Alamat URL foto publik atau path di folder public (mis. /images/produk.jpg)"
-              />
+              {(watchedImages ?? []).length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {(watchedImages ?? []).map((image, index) => (
+                    <div
+                      key={`${image.imageUrl}-${index}`}
+                      className={`relative overflow-hidden rounded-2xl border p-2 ${
+                        image.isPrimary
+                          ? "border-[#C76845] ring-2 ring-[#C76845]/25"
+                          : "border-[#314B3A]/12"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        className="aspect-square w-full object-cover"
+                        src={image.imageUrl}
+                        alt=""
+                      />
+                      {image.isPrimary ? (
+                        <span className="absolute left-2 top-2 rounded-full bg-[#C76845] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-white">
+                          Utama
+                        </span>
+                      ) : null}
+
+                      <div className="mt-2 flex items-center gap-1.5">
+                        {!image.isPrimary ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 flex-1 text-xs"
+                            onClick={() => makeImagePrimary(index)}
+                          >
+                            Jadikan Utama
+                          </Button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-xl text-[#B23C22] hover:bg-[#F9E7DF]"
+                          onClick={() => removeImage(index)}
+                          aria-label={`Hapus foto ${index + 1}`}
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="pt-3 border-t border-[#314B3A]/8">
+                <label className="block">
+                  <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">
+                    Atau Tambah URL Foto Langsung
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      className="w-full rounded-xl border border-[#314B3A]/15 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#27372D] outline-none transition focus:border-[#C76845] focus:ring-2 focus:ring-[#C76845]/25"
+                      type="url"
+                      value={manualImageUrl}
+                      placeholder="https://… atau /images/produk.jpg"
+                      onChange={(event) => setManualImageUrl(event.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!manualImageUrl.trim()}
+                      onClick={() => {
+                        addManualImageUrl(manualImageUrl.trim());
+                        setManualImageUrl("");
+                      }}
+                    >
+                      Tambah
+                    </Button>
+                  </div>
+                  <span className="mt-1 block text-xs font-medium text-[#8A948C]">
+                    URL ini ditampilkan di galeri, tetapi tidak diunggah ke Storage.
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
 

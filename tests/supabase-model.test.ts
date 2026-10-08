@@ -43,7 +43,7 @@ function baseRow(): SupabaseProductRow {
       },
     ],
     ages: [{ age_range: { min_months: 12, max_months: 48 } }],
-    images: [{ storage_path: "/images/products/koleksi.jpeg", sort_order: 0, is_primary: true }],
+    images: [{ id: 1, storage_path: "/images/products/koleksi.jpeg", alt_text: null, sort_order: 0, is_primary: true }],
     material: {
       code: "kayu-pinus-solid",
       translations: [
@@ -90,7 +90,7 @@ test("foto statis dibiarkan apa adanya; foto storage menjadi alamat publik", () 
   assert.equal(statis.imagePath, undefined);
 
   const row = baseRow();
-  row.images = [{ storage_path: "products/9-123.jpg", sort_order: 0, is_primary: true }];
+  row.images = [{ id: 2, storage_path: "products/9-123.jpg", alt_text: null, sort_order: 0, is_primary: true }];
   const unggahan = toManagedProductFromRow(row, buildUrl);
   assert.equal(unggahan.imageUrl, "https://contoh.supabase.co/storage/v1/object/public/produk/products/9-123.jpg");
   assert.equal(unggahan.imagePath, "products/9-123.jpg");

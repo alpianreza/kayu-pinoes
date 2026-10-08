@@ -163,10 +163,46 @@ test("formToRecord memangkas spasi dan mengubah angka", () => {
   assert.equal(record.imageUrl, undefined);
 });
 
-test("formToRecord menyertakan foto hanya bila diisi", () => {
-  const record = formToRecord(baseForm({ imageUrl: " /images/a.png ", imagePath: "" }));
-  assert.equal(record.imageUrl, "/images/a.png");
-  assert.equal(record.imagePath, undefined);
+test("formToRecord menyertakan galeri foto hanya bila diisi", () => {
+  const record = formToRecord(
+    baseForm({
+      images: [
+        { imageUrl: "https://cdn.example/produk/5/a.png", imagePath: "products/5-a.png", sortOrder: 0, isPrimary: false },
+        { imageUrl: "https://cdn.example/produk/5/b.png", imagePath: "products/5-b.png", sortOrder: 1, isPrimary: true },
+      ],
+    }),
+  );
+
+  assert.deepEqual(record.images, [
+    { imageUrl: "https://cdn.example/produk/5/a.png", imagePath: "products/5-a.png", sortOrder: 0, isPrimary: false },
+    { imageUrl: "https://cdn.example/produk/5/b.png", imagePath: "products/5-b.png", sortOrder: 1, isPrimary: true },
+  ]);
+  // Gambar utama (isPrimary) mengisi field lama untuk kompatibilitas.
+  assert.equal(record.imageUrl, "https://cdn.example/produk/5/b.png");
+  assert.equal(record.imagePath, "products/5-b.png");
+});
+
+test("formToRecord menulis images ulang dengan sortOrder berurutan", () => {
+  const record = formToRecord(
+    baseForm({
+      images: [
+        { imageUrl: "/images/a.png", sortOrder: 9, isPrimary: true },
+        { imageUrl: "/images/b.png", sortOrder: 3, isPrimary: false },
+      ],
+    }),
+  );
+
+  assert.deepEqual(
+    record.images?.map((image) => image.sortOrder),
+    [0, 1],
+  );
+  assert.equal(record.images?.[0].imagePath, undefined);
+});
+
+test("formToRecord tidak menulis images bila galeri kosong", () => {
+  const record = formToRecord(baseForm());
+  assert.equal(record.images, undefined);
+  assert.equal(record.imageUrl, undefined);
 });
 
 test("toRecord membuang documentId", () => {
@@ -312,6 +348,36 @@ test("formFromProduct mengisi field kosong untuk produk lama tanpa varian", () =
   assert.equal(form.slug, "");
   assert.equal(form.imagePath, "");
   assert.equal(form.imageUrl, "");
+  assert.deepEqual(form.images, []);
+});
+
+test("formFromProduct memakai galeri bila ada (jalur edit multi-gambar)", () => {
+  const product = managedProduct("9", 2);
+  product.images = [
+    { imageUrl: "https://cdn.example/p/1.png", imagePath: "products/1.png", sortOrder: 0, isPrimary: true },
+    { imageUrl: "https://cdn.example/p/2.png", imagePath: "products/2.png", sortOrder: 1, isPrimary: false },
+  ];
+
+  const form = formFromProduct(product);
+
+  assert.equal(form.images.length, 2);
+  assert.equal(form.images[0].isPrimary, true);
+  // Field gambar utama lama mengikuti isPrimary.
+  assert.equal(form.imageUrl, "https://cdn.example/p/1.png");
+  assert.equal(form.imagePath, "products/1.png");
+});
+
+test("formFromProduct membuat satu gambar utama dari field lama bila galeri kosong", () => {
+  const product = managedProduct("10", 2);
+  product.imagePath = "products/10/foto.png";
+  product.imageUrl = "https://cdn.example/products/10/foto.png";
+
+  const form = formFromProduct(product);
+
+  assert.equal(form.images.length, 1);
+  assert.equal(form.images[0].isPrimary, true);
+  assert.equal(form.images[0].imagePath, "products/10/foto.png");
+  assert.equal(form.imageUrl, "https://cdn.example/products/10/foto.png");
 });
 
 test("createEmptyForm tidak menimpa terjemahan; field kosong rapi", () => {
@@ -389,4 +455,32 @@ test("isFormDirty: perubahan nama, status, atau varian menandai perubahan belum 
 
   const extraVariant = { ...initial, variants: [{ label: "S", price: "" }] };
   assert.equal(isFormDirty(extraVariant, initial), true);
+});
+
+test("isFormDirty: perubahan daftar galeri (tambah/hapus/ganti utama) menandai perubahan", () => {
+  const initial = baseForm({ id: "3", images: [{ imageUrl: "/images/a.png", sortOrder: 0, isPrimary: true }] });
+
+  const removed = { ...initial, images: [] };
+  assert.equal(isFormDirty(removed, initial), true);
+
+  const added = {
+    ...initial,
+    images: [
+      { imageUrl: "/images/a.png", sortOrder: 0, isPrimary: true },
+      { imageUrl: "/images/b.png", sortOrder: 1, isPrimary: false },
+    ],
+  };
+  assert.equal(isFormDirty(added, initial), true);
+
+  const repointedPrimary = {
+    ...initial,
+    images: [
+      { imageUrl: "/images/a.png", sortOrder: 0, isPrimary: false },
+      { imageUrl: "/images/b.png", sortOrder: 1, isPrimary: true },
+    ],
+  };
+  assert.equal(isFormDirty(repointedPrimary, initial), true);
+
+  // Urutan yang sama persis (termasuk urutan list) dianggap tidak berubah.
+  assert.equal(isFormDirty({ ...initial, images: initial.images.map((image, index) => ({ ...image, sortOrder: index })) }, initial), false);
 });

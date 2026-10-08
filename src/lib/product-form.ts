@@ -1,9 +1,10 @@
 import { z } from "zod";
 
 import type { Language } from "./catalog-i18n.ts";
-import { productIllustrations } from "./products.ts";
+import { productIllustrations, type ProductImageItem } from "./products.ts";
 import {
   createEmptyTranslation,
+  normalizeImages,
   type ManagedProduct,
   type ProductRecord,
   type ProductStatus,
@@ -23,10 +24,27 @@ export type ProductForm = {
   illustration: ManagedProduct["illustration"];
   imageUrl: string;
   imagePath: string;
+  /** Galeri foto produk; `isPrimary` menentukan gambar utama. */
+  images: ProductImageItem[];
   /** Varian produk (mis. ukuran) - nama wajib, harga boleh kosong. */
   variants: Array<{ label: string; price: string }>;
   translations: Record<Language, TranslationForm>;
 };
+
+/**
+ * Gambar utama dari daftar galeri: yang `isPrimary` (atau pertama bila tidak
+ * ada), dipakai mengisi field `imageUrl`/`imagePath` lama yang masih dibaca
+ * komponen dan fungsi simpan.
+ */
+export function primaryImageFromList(images: ProductImageItem[]): {
+  imageUrl: string;
+  imagePath: string;
+} {
+  const primary = images.find((image) => image.isPrimary) ?? images[0];
+  if (!primary) return { imageUrl: "", imagePath: "" };
+
+  return { imageUrl: primary.imageUrl, imagePath: primary.imagePath ?? "" };
+}
 
 export const TRANSLATION_FIELDS: Array<{
   key: keyof ProductTranslation;
@@ -74,6 +92,7 @@ export function toRecord(product: ManagedProduct): ProductRecord {
     ...(product.imageUrl ? { imageUrl: product.imageUrl } : {}),
     ...(product.imagePath ? { imagePath: product.imagePath } : {}),
     ...(product.variants?.length ? { variants: product.variants } : {}),
+    ...(product.images?.length ? { images: product.images } : {}),
   };
 }
 
@@ -97,6 +116,7 @@ export function createEmptyForm(existing: ManagedProduct[]): ProductForm {
     illustration: "mainan",
     imageUrl: "",
     imagePath: "",
+    images: [],
     variants: [],
     translations: {
       id: createEmptyTranslation(),
@@ -107,6 +127,18 @@ export function createEmptyForm(existing: ManagedProduct[]): ProductForm {
 }
 
 export function formFromProduct(product: ManagedProduct): ProductForm {
+  const images = normalizeImages(product.images);
+  const legacyImage =
+    images.length === 0 && product.imageUrl
+      ? [{
+          imageUrl: product.imageUrl,
+          ...(product.imagePath ? { imagePath: product.imagePath } : {}),
+          sortOrder: 0,
+          isPrimary: true,
+        }]
+      : images;
+  const primary = primaryImageFromList(legacyImage);
+
   return {
     id: String(product.id),
     slug: product.slug ?? "",
@@ -115,8 +147,9 @@ export function formFromProduct(product: ManagedProduct): ProductForm {
     surface: product.surface,
     accent: product.accent,
     illustration: product.illustration,
-    imageUrl: product.imageUrl ?? "",
-    imagePath: product.imagePath ?? "",
+    imageUrl: primary.imageUrl,
+    imagePath: primary.imagePath,
+    images: legacyImage,
     variants: (product.variants ?? []).map((variant) => ({ label: variant.label, price: variant.price })),
     translations: {
       id: { ...createEmptyTranslation(), ...product.translations.id },
@@ -174,6 +207,12 @@ const productFormBase = z.object({
   illustration: z.enum(productIllustrations),
   imageUrl: z.string(),
   imagePath: z.string(),
+  images: z.array(z.object({
+    imageUrl: z.string(),
+    imagePath: z.string().optional(),
+    sortOrder: z.number(),
+    isPrimary: z.boolean(),
+  })),
   variants: z.array(z.object({ label: z.string(), price: z.string() })),
   translations: z.object({
     id: z.object(translationShape),
@@ -275,6 +314,12 @@ export function validateForm(form: ProductForm, options: ValidationOptions = {})
 }
 
 export function formToRecord(form: ProductForm): ProductRecord {
+  const images = normalizeImages(form.images).map((image, index) => ({
+    ...image,
+    sortOrder: index,
+  }));
+  const primary = primaryImageFromList(images);
+
   return {
     id: Number(form.id),
     order: Number(form.order),
@@ -283,8 +328,9 @@ export function formToRecord(form: ProductForm): ProductRecord {
     accent: form.accent.trim(),
     illustration: form.illustration,
     ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
-    ...(form.imageUrl.trim() ? { imageUrl: form.imageUrl.trim() } : {}),
-    ...(form.imagePath.trim() ? { imagePath: form.imagePath.trim() } : {}),
+    ...(primary.imageUrl ? { imageUrl: primary.imageUrl } : {}),
+    ...(primary.imagePath ? { imagePath: primary.imagePath } : {}),
+    ...(images.length > 0 ? { images } : {}),
     ...(form.variants.length > 0
       ? {
           variants: form.variants.map((variant) => ({
@@ -318,6 +364,7 @@ function normalizeForDirtyCheck(form: ProductForm): ProductForm {
   return {
     ...form,
     variants: [...form.variants].sort((a, b) => a.label.localeCompare(b.label)),
+    images: form.images.map((image, index) => ({ ...image, sortOrder: index })),
     translations: {
       id: { ...form.translations.id },
       en: { ...form.translations.en },

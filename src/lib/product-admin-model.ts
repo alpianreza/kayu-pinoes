@@ -31,6 +31,7 @@ export function stripDocumentId(product: ManagedProduct): ProductRecord {
     ...(product.imageUrl ? { imageUrl: product.imageUrl } : {}),
     ...(product.imagePath ? { imagePath: product.imagePath } : {}),
     ...(product.variants?.length ? { variants: product.variants } : {}),
+    ...(product.images?.length ? { images: product.images } : {}),
   };
 }
 

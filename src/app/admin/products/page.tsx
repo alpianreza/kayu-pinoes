@@ -23,6 +23,7 @@ import {
   uploadProductImage,
 } from "@/lib/supabase-product-admin";
 import {
+  fetchManagedProducts,
   subscribeToManagedProducts,
   type ManagedProduct,
   type ProductStatus,
@@ -40,10 +41,13 @@ import {
   nextStatus,
   type ProductFilterState,
 } from "@/lib/product-filtering";
+import { isStorageImagePath } from "@/lib/product-admin-model";
 import {
+  fetchMasterAgeRanges,
   fetchMasterCategories,
   fetchMasterMaterials,
   fetchMasterFinishings,
+  type MasterAgeRange,
   type MasterCategory,
   type MasterMaterial,
   type MasterFinishing,
@@ -54,6 +58,18 @@ import { Notice } from "../_components/Notice";
 import { ProductEditor } from "../_components/ProductEditor";
 import { ProductFilters } from "../_components/ProductFilters";
 import { ProductList } from "../_components/ProductList";
+
+/** Semua path Storage (bucket `produk`) yang dimiliki galeri sebuah produk. */
+function storagePathsOfProduct(product: ManagedProduct): string[] {
+  const paths: string[] = [];
+  for (const image of product.images ?? []) {
+    if (isStorageImagePath(image.imagePath)) paths.push(image.imagePath as string);
+  }
+  if (paths.length === 0 && isStorageImagePath(product.imagePath)) {
+    paths.push(product.imagePath as string);
+  }
+  return paths;
+}
 
 export default function AdminProductsPage() {
   const searchParams = useSearchParams();
@@ -70,6 +86,7 @@ export default function AdminProductsPage() {
   const [masterCategories, setMasterCategories] = useState<MasterCategory[]>([]);
   const [masterMaterials, setMasterMaterials] = useState<MasterMaterial[]>([]);
   const [masterFinishings, setMasterFinishings] = useState<MasterFinishing[]>([]);
+  const [masterAgeRanges, setMasterAgeRanges] = useState<MasterAgeRange[]>([]);
 
   // Filter State
   const [filters, setFilters] = useState<ProductFilterState>({
@@ -94,8 +111,10 @@ export default function AdminProductsPage() {
   const [deleteProductTarget, setDeleteProductTarget] = useState<ManagedProduct | null>(null);
 
   const sessionUploadsRef = useRef<string[]>([]);
-  const attachedImageRef = useRef<string | null>(null);
-  const savedImageRef = useRef<string | null | undefined>(undefined);
+  /** Path Storage lama (galeri produk yang diedit) saat editor dibuka. */
+  const attachedImageRef = useRef<string[]>([]);
+  /** Path Storage yang tersimpan setelah save terakhir di sesi ini. */
+  const savedImageRef = useRef<string[] | undefined>(undefined);
   const editorWasOpenRef = useRef(false);
 
   // 1. Subscribe to Managed Products
@@ -113,6 +132,21 @@ export default function AdminProductsPage() {
     );
   }, []);
 
+  // Segarkan daftar admin sesaat setelah operasi tulis, tanpa menunggu
+  // tick polling 30 detik berikutnya. Kegagalan tidak mengganti status
+  // pemuatan - polling berikutnya masih jadi cadangan.
+  const refreshManagedProducts = useCallback(async () => {
+    try {
+      const next = await fetchManagedProducts();
+      setManagedProducts(next);
+      setProductsLoaded(true);
+      setListError(null);
+    } catch (error) {
+      // Biarkan polling reguler yang menangkap error berikutnya.
+      void error;
+    }
+  }, []);
+
   // 2. Fetch Master Data for Selectors
   useEffect(() => {
     let cancelled = false;
@@ -122,12 +156,14 @@ export default function AdminProductsPage() {
         fetchMasterCategories(),
         fetchMasterMaterials(),
         fetchMasterFinishings(),
+        fetchMasterAgeRanges(),
       ])
-        .then(([cats, mats, fins]) => {
+        .then(([cats, mats, fins, ages]) => {
           if (cancelled) return;
           setMasterCategories(cats);
           setMasterMaterials(mats);
           setMasterFinishings(fins);
+          setMasterAgeRanges(ages);
         })
         .catch((err: unknown) => {
           if (!cancelled) setListError(toMessage(err));
@@ -151,7 +187,7 @@ export default function AdminProductsPage() {
     setFormError(null);
     setEditorSession((c) => c + 1);
     sessionUploadsRef.current = [];
-    attachedImageRef.current = null;
+    attachedImageRef.current = [];
     savedImageRef.current = undefined;
     setEditorOpen(true);
   }, [managedProducts]);
@@ -164,7 +200,7 @@ export default function AdminProductsPage() {
       setFormError(null);
       setEditorSession((c) => c + 1);
       sessionUploadsRef.current = [];
-      attachedImageRef.current = product.imagePath ?? null;
+      attachedImageRef.current = storagePathsOfProduct(product);
       savedImageRef.current = undefined;
       setEditorOpen(true);
     },
@@ -192,7 +228,7 @@ export default function AdminProductsPage() {
   }, [productsLoaded, actionParam, editParam, managedProducts, startCreate, startEdit]);
 
   // Derive filter dropdown options
-  const categoryOptions = useMemo(() => {
+  const filterCategoryOptions = useMemo(() => {
     const fromMaster = masterCategories
       .map((c) => c.translations.id || c.slug)
       .filter(Boolean);
@@ -202,24 +238,29 @@ export default function AdminProductsPage() {
     return Array.from(new Set([...fromMaster, ...fromProducts]));
   }, [masterCategories, managedProducts]);
 
-  const ageOptions = useMemo(() => {
+  const filterAgeOptions = useMemo(() => {
     const fromProducts = managedProducts
       .map((p) => p.translations.id?.age)
       .filter((a): a is string => Boolean(a && a.trim().length > 0));
     return Array.from(new Set(fromProducts));
   }, [managedProducts]);
 
-  const materialOptions = useMemo(() => {
-    return masterMaterials
-      .map((m) => m.translations.id || m.code)
-      .filter(Boolean);
-  }, [masterMaterials]);
+  const careOptions = useMemo(() => {
+    const options = { id: new Set<string>(), en: new Set<string>(), ar: new Set<string>() };
 
-  const finishingOptions = useMemo(() => {
-    return masterFinishings
-      .map((f) => f.translations.id || f.code)
-      .filter(Boolean);
-  }, [masterFinishings]);
+    for (const product of managedProducts) {
+      for (const language of ["id", "en", "ar"] as const) {
+        const care = product.translations[language]?.care?.trim();
+        if (care) options[language].add(care);
+      }
+    }
+
+    return {
+      id: Array.from(options.id),
+      en: Array.from(options.en),
+      ar: Array.from(options.ar),
+    };
+  }, [managedProducts]);
 
   // Filter & Sorting Logic
   const filteredProducts = useMemo(
@@ -257,16 +298,19 @@ export default function AdminProductsPage() {
     if (!editorWasOpenRef.current) return;
     editorWasOpenRef.current = false;
 
-    const kept = savedImageRef.current ?? null;
+    const kept = savedImageRef.current ?? [];
+    const keptSet = new Set(kept);
     for (const path of sessionUploadsRef.current) {
-      if (path !== kept) void deleteProductImage(path);
+      if (!keptSet.has(path)) void deleteProductImage(path);
     }
     sessionUploadsRef.current = [];
 
     if (savedImageRef.current !== undefined) {
       const attached = attachedImageRef.current;
-      if (attached && attached !== savedImageRef.current) void deleteProductImage(attached);
-      attachedImageRef.current = null;
+      for (const path of attached) {
+        if (!keptSet.has(path)) void deleteProductImage(path);
+      }
+      attachedImageRef.current = [];
       savedImageRef.current = undefined;
     }
 
@@ -291,6 +335,7 @@ export default function AdminProductsPage() {
       illustration: record.illustration,
       imageUrl: record.imageUrl ?? "",
       imagePath: record.imagePath ?? "",
+      images: record.images ?? [],
       variants: (record.variants ?? []).map((v) => ({ label: v.label, price: v.price })),
       translations: record.translations,
     };
@@ -315,10 +360,13 @@ export default function AdminProductsPage() {
       }
 
       await saveProductRecord(record);
-      savedImageRef.current = record.imagePath ?? null;
+      savedImageRef.current = (record.images ?? [])
+        .filter((image) => isStorageImagePath(image.imagePath))
+        .map((image) => image.imagePath as string);
 
       setNotice(`Produk "${record.translations.id.name}" berhasil disimpan.`);
       closeEditor();
+      void refreshManagedProducts();
     } catch (err) {
       setFormError(toMessage(err));
     } finally {
@@ -351,6 +399,7 @@ export default function AdminProductsPage() {
             : "Disimpan saja (Draft)"
         }.`
       );
+      void refreshManagedProducts();
     } catch (err) {
       setListError(toMessage(err));
     } finally {
@@ -371,6 +420,7 @@ export default function AdminProductsPage() {
     try {
       await swapProductOrder(filteredProducts[index], filteredProducts[targetIndex]);
       setNotice("Urutan tampil produk berhasil diperbarui.");
+      void refreshManagedProducts();
     } catch (err) {
       setListError(toMessage(err));
     } finally {
@@ -392,6 +442,7 @@ export default function AdminProductsPage() {
     try {
       await deleteProductRecord(product.documentId);
       setNotice(`Produk "${label}" berhasil dihapus.`);
+      void refreshManagedProducts();
     } catch (err) {
       setListError(toMessage(err));
     } finally {
@@ -427,8 +478,8 @@ export default function AdminProductsPage() {
       {/* Filter Toolbar */}
       <ProductFilters
         filters={filters}
-        categoryOptions={categoryOptions}
-        ageOptions={ageOptions}
+        categoryOptions={filterCategoryOptions}
+        ageOptions={filterAgeOptions}
         onChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
         onReset={() =>
           setFilters({
@@ -460,10 +511,11 @@ export default function AdminProductsPage() {
                 editingDocumentId={editingDocumentId}
                 saving={saving}
                 serverError={formError}
-                categoryOptions={categoryOptions}
-                ageOptions={ageOptions}
-                materialOptions={materialOptions}
-                finishingOptions={finishingOptions}
+                categoryOptions={masterCategories}
+                ageOptions={masterAgeRanges}
+                materialOptions={masterMaterials}
+                finishingOptions={masterFinishings}
+                careOptions={careOptions}
                 onUpload={handleUpload}
                 onClose={closeEditor}
                 onSubmit={handleSave}

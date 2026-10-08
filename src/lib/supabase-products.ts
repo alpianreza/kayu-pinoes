@@ -62,6 +62,15 @@ export async function getPublishedProducts(language: Language): Promise<Product[
   return products.map((product) => getLocalizedProduct(product, language));
 }
 
+/**
+ * Ambil seluruh produk sekali jalan (tanpa RLS filter status; admin melihat
+ * semuanya). Dipakai panel admin untuk menyegarkan daftar sesaat setelah
+ * menyimpan/mengubah data, tanpa menunggu siklus polling berikutnya.
+ */
+export async function fetchManagedProducts(): Promise<ManagedProduct[]> {
+  return fetchProductRows(null);
+}
+
 /** Jeda antar-penyegaran daftar (dulu realtime Firestore, kini polling ringan). */
 const POLL_INTERVAL_MS = 30_000;
 

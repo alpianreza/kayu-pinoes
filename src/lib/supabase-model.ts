@@ -8,7 +8,7 @@ import {
   type ProductRecord,
   type ProductTranslation,
 } from "./product-record.ts";
-import { productIllustrations, type ProductIllustration, type ProductVariant } from "./products.ts";
+import { productIllustrations, type ProductIllustration, type ProductImageItem, type ProductVariant } from "./products.ts";
 
 /**
  * Penerjemah data Supabase (bentuk relasional) menjadi tipe aplikasi.
@@ -30,7 +30,7 @@ export const PRODUCT_SELECT = [
   "translations:product_translations(language_id, name, description, dimensions, contents, care)",
   "categories:product_categories(is_primary, category:categories(slug, translations:category_translations(language_id, name)))",
   "ages:product_age_ranges(age_range:age_ranges(min_months, max_months))",
-  "images:product_images(storage_path, sort_order, is_primary)",
+  "images:product_images(id, storage_path, alt_text, sort_order, is_primary)",
   "material:material_id(code, translations:material_translations(language_id, name))",
   "finishing:finishing_id(code, translations:finishing_translations(language_id, name))",
   "variants:product_variants(id, code, sort_order, is_active, translations:product_variant_translations(language_id, name), prices:product_variant_prices(price, price_note, is_active, currency:currencies(code, symbol)))",
@@ -63,7 +63,7 @@ export type SupabaseProductRow = {
       }>
     | null;
   ages: Array<{ age_range: { min_months: number; max_months: number } | null }> | null;
-  images: Array<{ storage_path: string; sort_order: number; is_primary: boolean }> | null;
+  images: Array<{ id: number; storage_path: string; alt_text: string | null; sort_order: number; is_primary: boolean }> | null;
   material: { code: string | null; translations: NameRow[] | null } | null;
   finishing: { code: string | null; translations: NameRow[] | null } | null;
   variants:
@@ -195,6 +195,12 @@ export function toManagedProductFromRow(
         Number(second.is_primary) - Number(first.is_primary) || first.sort_order - second.sort_order,
     );
   const primaryImage = images[0];
+  const gallery: ProductImageItem[] = images.map((image) => ({
+    imageUrl: buildPublicUrl(image.storage_path),
+    ...(isStorageImagePath(image.storage_path) ? { imagePath: image.storage_path } : {}),
+    sortOrder: Number(image.sort_order),
+    isPrimary: image.is_primary,
+  }));
 
   const imageUrl = primaryImage ? buildPublicUrl(primaryImage.storage_path) : undefined;
   const imagePath =
@@ -221,6 +227,7 @@ export function toManagedProductFromRow(
     },
     ...(imageUrl ? { imageUrl } : {}),
     ...(imagePath ? { imagePath } : {}),
+    ...(gallery.length > 0 ? { images: gallery } : {}),
     variants: mapVariantRows(row.variants, "id"),
   };
 
