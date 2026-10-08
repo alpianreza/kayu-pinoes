@@ -13,6 +13,7 @@ import { AdminLogin } from "./_components/AdminLogin";
 import { AdminMobileNav } from "./_components/AdminMobileNav";
 import { AdminSidebar } from "./_components/AdminSidebar";
 import { NotConfiguredScreen } from "./_components/NotConfiguredScreen";
+import { ToastProvider } from "./_components/Toaster";
 
 const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").trim().toLowerCase();
 
@@ -183,7 +184,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <AdminHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
 
         <main className="flex-1 px-4 py-8 sm:px-8 lg:px-10 max-w-7xl w-full mx-auto">
-          {children}
+          <ToastProvider>{children}</ToastProvider>
         </main>
       </div>
     </div>

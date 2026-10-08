@@ -58,6 +58,10 @@ export type SiteCopy = {
     askPrice: string;
     /** Keterangan kecil di bawah daftar varian. */
     variantsHint: string;
+    /** Judul baris harga di samping varian, mis. "Harga". */
+    priceLabel: string;
+    /** Baris harga sebelum varian dipilih, mis. "Mulai dari". */
+    priceFrom: string;
     specs: {
       age: string;
       wood: string;
@@ -157,7 +161,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       viewDetails: "Lihat detail",
       variantsTitle: "Varian",
       askPrice: "Tanya harga",
-      variantsHint: "Klik varian untuk memesan lewat WhatsApp.",
+      variantsHint: "Pilih varian untuk melihat harganya; pesan lewat WhatsApp.",
+      priceLabel: "Harga",
+      priceFrom: "Mulai dari",
       specs: {
         age: "Usia disarankan",
         wood: "Jenis kayu",
@@ -268,7 +274,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       viewDetails: "View details",
       variantsTitle: "Options",
       askPrice: "Ask for price",
-      variantsHint: "Tap an option to order via WhatsApp.",
+      variantsHint: "Choose an option to see its price; order through WhatsApp.",
+      priceLabel: "Price",
+      priceFrom: "From",
       specs: {
         age: "Recommended age",
         wood: "Wood",
@@ -378,7 +386,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       viewDetails: "عرض التفاصيل",
       variantsTitle: "الخيارات",
       askPrice: "اسأل عن السعر",
-      variantsHint: "انقر على الخيار للطلب عبر واتساب.",
+      variantsHint: "اختر خيارًا لعرض سعره؛ واطلب عبر واتساب.",
+      priceLabel: "السعر",
+      priceFrom: "ابتداءً من",
       specs: {
         age: "العمر المقترح",
         wood: "نوع الخشب",

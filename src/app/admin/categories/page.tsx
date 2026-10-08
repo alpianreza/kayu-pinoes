@@ -15,12 +15,13 @@ import { slugify, toMessage } from "@/lib/product-form";
 import { ConfirmModal } from "../_components/ConfirmModal";
 import { Notice } from "../_components/Notice";
 import { TextField } from "../_components/TextField";
+import { useToast } from "../_components/Toaster";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
-  const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // Modal State for Add / Edit
   const [modalOpen, setModalOpen] = useState(false);
@@ -126,7 +127,8 @@ export default function AdminCategoriesPage() {
         translations,
       });
 
-      setSuccessNotice(
+      showToast(
+        "success",
         editingCategory
           ? `Kategori "${translations.id}" berhasil diperbarui.`
           : `Kategori "${translations.id}" berhasil ditambahkan.`
@@ -135,6 +137,7 @@ export default function AdminCategoriesPage() {
       await loadData();
     } catch (err) {
       setModalError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setSaving(false);
     }
@@ -145,11 +148,11 @@ export default function AdminCategoriesPage() {
 
     try {
       await deleteMasterCategory(deleteTarget.id);
-      setSuccessNotice(`Kategori "${deleteTarget.translations.id || deleteTarget.slug}" dihapus.`);
+      showToast("success", `Kategori "${deleteTarget.translations.id || deleteTarget.slug}" dihapus.`);
       setDeleteTarget(null);
       await loadData();
     } catch (err) {
-      setErrorNotice(toMessage(err));
+      showToast("error", toMessage(err));
       setDeleteTarget(null);
     }
   };
@@ -176,7 +179,6 @@ export default function AdminCategoriesPage() {
       </div>
 
       {errorNotice ? <Notice kind="error">{errorNotice}</Notice> : null}
-      {successNotice ? <Notice kind="success">{successNotice}</Notice> : null}
 
       {/* Table List */}
       <div className="overflow-hidden rounded-[2rem] border border-[#314B3A]/12 bg-white shadow-[0_12px_36px_rgba(49,75,58,0.05)]">

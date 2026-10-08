@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 import { OrderButton } from "@/components/site/OrderButton";
 import { ProductCard } from "@/components/site/ProductCard";
 import { ProductImage } from "@/components/site/ProductImage";
-import { ProductSlideshow, type SlideImage } from "@/components/site/ProductSlideshow";
+import type { SlideImage } from "@/components/site/ProductSlideshow";
 import { ProductVariants } from "@/components/site/ProductVariants";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -29,6 +30,18 @@ export function ProductDetailView({ slug }: { slug: string }) {
     products.find((item) => item.slug === slug) ??
     products.find((item) => String(item.id) === slug) ??
     null;
+
+  // Varian pertama terpilih sebagai awalan; bila katalog sempat menyusut
+  // (produk dari server data), indeks dipotong ke rentang varian yang ada
+  // supaya tidak menunjuk varian yang hilang.
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const variantCount = product?.variants?.length ?? 0;
+  const activeVariantIndex = variantCount === 0 ? 0 : Math.min(selectedVariantIndex, variantCount - 1);
+  const selectedVariant = variantCount > 0 ? (product?.variants?.[activeVariantIndex] ?? null) : null;
+  const hasVariants = variantCount > 0;
+
+  // Foto besar yang sedang tampil; thumbnail di bawahnya mengganti nilai ini.
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   if (!product) {
     return (
@@ -60,6 +73,8 @@ export function ProductDetailView({ slug }: { slug: string }) {
     .filter((image) => image.imageUrl.trim().length > 0)
     .sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary) || a.sortOrder - b.sortOrder)
     .map((image) => ({ src: image.imageUrl, alt: product.name }));
+
+  const activeImageIndex = gallery.length === 0 ? 0 : Math.min(selectedImageIndex, gallery.length - 1);
 
   const specs: Array<[string, string]> = [
     [copy.specs.age, product.age],
@@ -101,32 +116,61 @@ export function ProductDetailView({ slug }: { slug: string }) {
 
         <section className="mx-auto max-w-7xl px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-12">
-            <figure
-              className="relative aspect-square overflow-hidden rounded-[2rem] border border-[#314B3A]/10"
-              style={{ backgroundColor: product.surface }}
-            >
-              {gallery.length > 0 ? (
-                gallery.length > 1 ? (
-                  <ProductSlideshow images={gallery} label={product.name} />
-                ) : (
+            <div className="flex flex-col gap-4">
+              <figure
+                className="relative aspect-square overflow-hidden rounded-[2rem] border border-[#314B3A]/10"
+                style={{ backgroundColor: product.surface }}
+              >
+                {gallery.length > 0 ? (
                   <ProductImage
-                    src={gallery[0].src}
-                    alt={gallery[0].alt}
+                    src={gallery[activeImageIndex].src}
+                    alt={gallery[activeImageIndex].alt}
                     priority
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
-                )
-              ) : (
-                <div className="grid size-full place-items-center">
-                  <span
-                    className="grid size-28 place-items-center rounded-[2rem] text-5xl font-black text-white/90"
-                    style={{ backgroundColor: product.accent }}
-                  >
-                    {product.name.slice(0, 1).toUpperCase()}
-                  </span>
-                </div>
-              )}
-            </figure>
+                ) : (
+                  <div className="grid size-full place-items-center">
+                    <span
+                      className="grid size-28 place-items-center rounded-[2rem] text-5xl font-black text-white/90"
+                      style={{ backgroundColor: product.accent }}
+                    >
+                      {product.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </figure>
+
+              {gallery.length > 1 ? (
+                <ul className="flex flex-wrap gap-2.5">
+                  {gallery.map((image, index) => {
+                    const isActive = index === activeImageIndex;
+
+                    return (
+                      <li key={image.src}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedImageIndex(index)}
+                          aria-label={`Tampilkan foto ${index + 1} dari ${gallery.length}`}
+                          aria-current={isActive}
+                          className={`relative block size-16 overflow-hidden rounded-xl border-2 transition-colors sm:size-20 ${
+                            isActive
+                              ? "border-[#C76845] ring-2 ring-[#C76845]/20"
+                              : "border-[#314B3A]/15 hover:border-[#C76845]/45"
+                          }`}
+                        >
+                          <ProductImage
+                            src={image.src}
+                            alt=""
+                            sizes="80px"
+                            className={isActive ? "object-cover" : "object-cover opacity-80 hover:opacity-100"}
+                          />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
+            </div>
 
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#C76845]">{product.category}</p>
@@ -136,8 +180,13 @@ export function ProductDetailView({ slug }: { slug: string }) {
               <p className="mt-5 max-w-md leading-7 text-[#536459]">{product.description}</p>
 
               <div className="w-full max-w-sm">
-                {product.variants && product.variants.length > 0 ? (
-                  <ProductVariants className="mt-6" productName={product.name} variants={product.variants} />
+                {hasVariants ? (
+                  <ProductVariants
+                    className="mt-6"
+                    variants={product.variants ?? []}
+                    selectedIndex={activeVariantIndex}
+                    onSelect={setSelectedVariantIndex}
+                  />
                 ) : null}
 
                 <dl className="mt-7 grid grid-cols-1 border-t border-[#314B3A]/10 sm:grid-cols-2">
@@ -156,7 +205,11 @@ export function ProductDetailView({ slug }: { slug: string }) {
               </div>
 
               <div className="mt-7 flex flex-wrap items-center gap-4">
-                <OrderButton productName={product.name} />
+                <OrderButton
+                  productName={product.name}
+                  variantLabel={selectedVariant ? selectedVariant.label : undefined}
+                  variantPrice={selectedVariant?.price}
+                />
                 <Button asChild variant="outline" size="lg">
                   <Link href="/products">
                     <ArrowLeft size={16} /> {copy.backToCatalog}

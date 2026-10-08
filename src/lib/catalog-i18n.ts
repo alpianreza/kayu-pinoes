@@ -75,6 +75,10 @@ type Translation = {
     askPrice: string;
     /** Keterangan kecil di bawah daftar varian. */
     variantsHint: string;
+    /** Judul baris harga di samping varian, mis. "Harga". */
+    priceLabel: string;
+    /** Baris harga sebelum varian dipilih, mis. "Mulai dari". */
+    priceFrom: string;
   };
   footer: {
     description: string;
@@ -154,7 +158,9 @@ export const translations = {
       care: "Perawatan",
       variantsTitle: "Varian",
       askPrice: "Tanya harga",
-      variantsHint: "Klik varian untuk memesan lewat WhatsApp.",
+      variantsHint: "Pilih varian untuk melihat harganya; pesan lewat WhatsApp.",
+      priceLabel: "Harga",
+      priceFrom: "Mulai dari",
     },
     footer: {
       description: "Galeri mainan kayu kecil untuk hari-hari yang penuh kemungkinan.",
@@ -315,7 +321,9 @@ export const translations = {
       care: "Care",
       variantsTitle: "Options",
       askPrice: "Ask for price",
-      variantsHint: "Tap an option to order via WhatsApp.",
+      variantsHint: "Choose an option to see its price; order through WhatsApp.",
+      priceLabel: "Price",
+      priceFrom: "From",
     },
     footer: {
       description: "A small wooden-toy gallery for days full of possibility.",
@@ -476,7 +484,9 @@ export const translations = {
       care: "العناية",
       variantsTitle: "الخيارات",
       askPrice: "اسأل عن السعر",
-      variantsHint: "انقر على الخيار للطلب عبر واتساب.",
+      variantsHint: "اختر خيارًا لعرض سعره؛ واطلب عبر واتساب.",
+      priceLabel: "السعر",
+      priceFrom: "ابتداءً من",
     },
     footer: {
       description: "معرض صغير للألعاب الخشبية لأيام مليئة بالاحتمالات.",

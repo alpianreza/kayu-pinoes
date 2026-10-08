@@ -54,10 +54,10 @@ import {
 } from "@/lib/supabase-admin-master";
 
 import { ConfirmModal } from "../_components/ConfirmModal";
-import { Notice } from "../_components/Notice";
 import { ProductEditor } from "../_components/ProductEditor";
 import { ProductFilters } from "../_components/ProductFilters";
 import { ProductList } from "../_components/ProductList";
+import { useToast } from "../_components/Toaster";
 
 /** Semua path Storage (bucket `produk`) yang dimiliki galeri sebuah produk. */
 function storagePathsOfProduct(product: ManagedProduct): string[] {
@@ -79,8 +79,8 @@ export default function AdminProductsPage() {
   const [managedProducts, setManagedProducts] = useState<ManagedProduct[]>([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // Master Data Options for Selectors
   const [masterCategories, setMasterCategories] = useState<MasterCategory[]>([]);
@@ -348,7 +348,6 @@ export default function AdminProductsPage() {
 
     setSaving(true);
     setFormError(null);
-    setNotice(null);
 
     try {
       const documentId = productDocumentId(record.id);
@@ -364,11 +363,12 @@ export default function AdminProductsPage() {
         .filter((image) => isStorageImagePath(image.imagePath))
         .map((image) => image.imagePath as string);
 
-      setNotice(`Produk "${record.translations.id.name}" berhasil disimpan.`);
+      showToast("success", `Produk "${record.translations.id.name}" berhasil disimpan.`);
       closeEditor();
       void refreshManagedProducts();
     } catch (err) {
       setFormError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setSaving(false);
     }
@@ -387,12 +387,11 @@ export default function AdminProductsPage() {
     const nextProductStatus: ProductStatus = nextStatus(product.status);
 
     setBusyAction(`status:${product.documentId}`);
-    setListError(null);
-    setNotice(null);
 
     try {
       await saveProductRecord({ ...toRecord(product), status: nextProductStatus });
-      setNotice(
+      showToast(
+        "success",
         `"${product.translations.id?.name ?? product.documentId}" sekarang berstatus ${
           nextProductStatus === "published"
             ? "Tampil di situs (Published)"
@@ -401,7 +400,7 @@ export default function AdminProductsPage() {
       );
       void refreshManagedProducts();
     } catch (err) {
-      setListError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setBusyAction(null);
     }
@@ -414,15 +413,13 @@ export default function AdminProductsPage() {
     if (index < 0 || targetIndex < 0 || targetIndex >= filteredProducts.length) return;
 
     setBusyAction(`move:${product.documentId}`);
-    setListError(null);
-    setNotice(null);
 
     try {
       await swapProductOrder(filteredProducts[index], filteredProducts[targetIndex]);
-      setNotice("Urutan tampil produk berhasil diperbarui.");
+      showToast("success", "Urutan tampil produk berhasil diperbarui.");
       void refreshManagedProducts();
     } catch (err) {
-      setListError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setBusyAction(null);
     }
@@ -435,16 +432,14 @@ export default function AdminProductsPage() {
     const label = product.translations.id?.name ?? product.documentId;
 
     setBusyAction(`delete:${product.documentId}`);
-    setListError(null);
-    setNotice(null);
     setDeleteProductTarget(null);
 
     try {
       await deleteProductRecord(product.documentId);
-      setNotice(`Produk "${label}" berhasil dihapus.`);
+      showToast("success", `Produk "${label}" berhasil dihapus.`);
       void refreshManagedProducts();
     } catch (err) {
-      setListError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setBusyAction(null);
     }
@@ -470,10 +465,6 @@ export default function AdminProductsPage() {
           <Plus size={16} /> Tambah Produk Baru
         </Button>
       </div>
-
-      {/* Notices */}
-      {listError ? <Notice kind="error">{listError}</Notice> : null}
-      {notice ? <Notice kind="success">{notice}</Notice> : null}
 
       {/* Filter Toolbar */}
       <ProductFilters

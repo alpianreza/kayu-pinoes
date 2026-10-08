@@ -4,26 +4,35 @@ import { useLanguage } from "@/components/site/LanguageProvider";
 import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
 import { Button } from "@/components/ui/button";
 import { siteCopy } from "@/lib/site-copy";
-import { buildOrderLink } from "@/lib/whatsapp";
+import { buildOrderLink, buildOrderLinkForVariant } from "@/lib/whatsapp";
 
 /**
  * Tombol "Pesan" yang membuka WhatsApp dengan pesan sudah terisi.
  *
- * Tidak dirender bila nomor WhatsApp belum dikonfigurasi - sengaja tanpa pesan
- * penjelasan, supaya halaman tidak menampilkan teks yang tidak perlu.
+ * `variantLabel`/`variantPrice` opsional: bila diisi, pesan WhatsApp
+ * menyebut varian (dan harganya, bila ada). Tidak dirender bila nomor
+ * WhatsApp belum dikonfigurasi - sengaja tanpa pesan penjelasan, supaya
+ * halaman tidak menampilkan teks yang tidak perlu.
  */
 export function OrderButton({
   productName,
+  variantLabel,
+  variantPrice,
   className,
   label,
 }: {
   productName?: string;
+  variantLabel?: string;
+  variantPrice?: string;
   className?: string;
   label?: string;
 }) {
   const { language } = useLanguage();
   const copy = siteCopy[language].order;
-  const href = buildOrderLink(productName, language);
+  const href =
+    variantLabel !== undefined
+      ? buildOrderLinkForVariant(productName ?? "", language, { label: variantLabel, price: variantPrice })
+      : buildOrderLink(productName, language);
 
   if (!href) return null;
 

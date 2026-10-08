@@ -22,6 +22,7 @@ import { slugify, toMessage } from "@/lib/product-form";
 
 import { ConfirmModal } from "../_components/ConfirmModal";
 import { Notice } from "../_components/Notice";
+import { useToast } from "../_components/Toaster";
 import { TextField } from "../_components/TextField";
 
 export default function AdminMasterDataPage() {
@@ -35,7 +36,7 @@ export default function AdminMasterDataPage() {
 
   // Notices
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
-  const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // Modal State for Text-based Master (Material / Finishing)
   const [textModalOpen, setTextModalOpen] = useState(false);
@@ -150,7 +151,7 @@ export default function AdminMasterDataPage() {
           is_active: isActive,
           translations,
         });
-        setSuccessNotice(`Material "${translations.id}" disimpan.`);
+        showToast("success", `Material "${translations.id}" disimpan.`);
       } else {
         await saveMasterFinishing({
           id: editingItem?.id,
@@ -159,13 +160,14 @@ export default function AdminMasterDataPage() {
           is_active: isActive,
           translations,
         });
-        setSuccessNotice(`Finishing "${translations.id}" disimpan.`);
+        showToast("success", `Finishing "${translations.id}" disimpan.`);
       }
 
       setTextModalOpen(false);
       await loadAll();
     } catch (err) {
       setModalError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setSaving(false);
     }
@@ -214,11 +216,12 @@ export default function AdminMasterDataPage() {
         sort_order: Number(ageSortOrder) || 0,
       });
 
-      setSuccessNotice(`Rentang usia ${min}-${max} bulan disimpan.`);
+      showToast("success", `Rentang usia ${min}-${max} bulan disimpan.`);
       setAgeModalOpen(false);
       await loadAll();
     } catch (err) {
       setModalError(toMessage(err));
+      showToast("error", toMessage(err));
     } finally {
       setSaving(false);
     }
@@ -238,11 +241,11 @@ export default function AdminMasterDataPage() {
         await deleteMasterAgeRange(deleteTarget.id);
       }
 
-      setSuccessNotice(`Item "${deleteTarget.label}" berhasil dihapus.`);
+      showToast("success", `Item "${deleteTarget.label}" berhasil dihapus.`);
       setDeleteTarget(null);
       await loadAll();
     } catch (err) {
-      setErrorNotice(toMessage(err));
+      showToast("error", toMessage(err));
       setDeleteTarget(null);
     }
   };
@@ -274,7 +277,6 @@ export default function AdminMasterDataPage() {
       </div>
 
       {errorNotice ? <Notice kind="error">{errorNotice}</Notice> : null}
-      {successNotice ? <Notice kind="success">{successNotice}</Notice> : null}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-[#314B3A]/10 pb-3">

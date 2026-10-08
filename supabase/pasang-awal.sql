@@ -711,6 +711,15 @@ declare
   v_price text;
   v_variant_id bigint;
   v_used text[] := '{}';
+  v_images jsonb;
+  v_img_len int;
+  v_item jsonb;
+  v_path text;
+  v_alt text;
+  v_order int;
+  v_primary boolean;
+  v_has_requested_primary boolean := false;
+  v_is_primary_set boolean := false;
 begin
   if not public.is_admin() then
     raise exception 'Akses menyimpan ditolak.';
@@ -872,15 +881,70 @@ begin
     contents = excluded.contents,
     care = excluded.care;
 
-  -- 7. Foto utama (satu baris primer; galeri menyusul di masa depan).
+  -- 7. Galeri foto.
+  --    Payload baru: payload->'images' = array [{ imageUrl, imagePath?,
+  --    sortOrder, isPrimary }]. Path Storage dipakai dari imagePath (hasil
+  --    unggahan aplikasi), fallback ke imageUrl (boleh URL luar / folder
+  --    public). Tabel disinkronkan ulang: semua baris lama dihapus, lalu
+  --    dipasangi ulang mengikuti array - baris yang dihapus juga berarti
+  --    admin sengaja melepasnya. Satu gambar utama per produk tetap
+  --    dijamin: indeks unik parsial (product_images_primary_idx) melarang
+  --    lebih dari satu, dan jika array tidak menandai satu pun isPrimary,
+  --    gambar pertama yang jadi utama.
+  --    Payload lama (tanpa images): perilaku lama - satu gambar utama dari
+  --    imagePath/imageUrl.
+  v_images := payload->'images';
+  v_img_len := coalesce(jsonb_array_length(coalesce(v_images, '[]'::jsonb)), 0);
+
   delete from public.product_images where product_id = v_id and variant_id is null;
-  v_text := nullif(trim(coalesce(payload->>'imagePath', '')), '');
-  if v_text is null then
-    v_text := nullif(trim(coalesce(payload->>'imageUrl', '')), '');
-  end if;
-  if v_text is not null then
-    insert into public.product_images (product_id, storage_path, sort_order, is_primary)
-    values (v_id, v_text, 0, true);
+
+  if v_img_len > 0 then
+    select exists (
+      select 1
+      from jsonb_array_elements(v_images) as image_item
+      where coalesce((image_item->>'isPrimary')::boolean, false)
+        and coalesce(nullif(trim(coalesce(image_item->>'imagePath', '')), ''), nullif(trim(coalesce(image_item->>'imageUrl', '')), '')) is not null
+    ) into v_has_requested_primary;
+
+    for v_i in 0 .. v_img_len - 1 loop
+      v_item := v_images->v_i;
+      if jsonb_typeof(v_item) <> 'object' then
+        continue;
+      end if;
+
+      v_path := nullif(trim(coalesce(v_item->>'imagePath', '')), '');
+      if v_path is null then
+        v_path := nullif(trim(coalesce(v_item->>'imageUrl', '')), '');
+      end if;
+      if v_path is null then
+        continue;
+      end if;
+
+      v_alt := nullif(trim(coalesce(v_item->>'altText', '')), '');
+      v_order := coalesce((v_item->>'sortOrder')::int, v_i);
+      v_primary := false;
+      if v_has_requested_primary then
+        v_primary := coalesce((v_item->>'isPrimary')::boolean, false) and not v_is_primary_set;
+      elsif not v_is_primary_set then
+        v_primary := true; -- gambar valid pertama jadi utama bila tak ada penanda
+      end if;
+
+      insert into public.product_images
+        (product_id, storage_path, alt_text, sort_order, is_primary)
+      values (v_id, v_path, v_alt, v_order, v_primary);
+      if v_primary then
+        v_is_primary_set := true;
+      end if;
+    end loop;
+  else
+    v_text := nullif(trim(coalesce(payload->>'imagePath', '')), '');
+    if v_text is null then
+      v_text := nullif(trim(coalesce(payload->>'imageUrl', '')), '');
+    end if;
+    if v_text is not null then
+      insert into public.product_images (product_id, storage_path, sort_order, is_primary)
+      values (v_id, v_text, 0, true);
+    end if;
   end if;
 
   -- 8. Varian + nama + harga teks.

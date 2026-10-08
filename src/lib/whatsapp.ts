@@ -52,7 +52,13 @@ export function buildOrderMessage(
   return productName ? copy.product(productName) : copy.general;
 }
 
-/** Tautan wa.me siap pakai, atau null bila nomor belum dikonfigurasi. */
+/**
+ * Tautan wa.me siap pakai, atau null bila nomor belum dikonfigurasi.
+ *
+ * `variantLabel` menulis nama varian di pesan (tautan baris varian yang
+ * tidak memilih, atau pesan umum produk). Pakai `buildOrderLinkForVariant`
+ * bila variannya punya harga - harga ikut terkirim.
+ */
 export function buildOrderLink(
   productName?: string,
   language: Language = "en",
@@ -63,6 +69,25 @@ export function buildOrderLink(
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
     buildOrderMessage(productName, language, variantLabel),
   )}`;
+}
+
+/**
+ * Tautan wa.me untuk varian yang dipilih. Harga varian (bila ada) ikut
+ * ditulis di pesan, supaya admin langsung tahu pilihan dan harganya.
+ * Kembali ke pesan varian biasa bila harga kosong.
+ */
+export function buildOrderLinkForVariant(
+  productName: string,
+  language: Language,
+  variant: { label: string; price?: string },
+): string | null {
+  if (!whatsappNumber) return null;
+
+  const price = (variant.price ?? "").trim();
+  const base = buildOrderMessage(productName, language, variant.label);
+  const text = price.length > 0 ? `${base} (harga: ${price})` : base;
+
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
 /** Tampilan nomor yang enak dibaca, mis. +62 896 2202 22910. */

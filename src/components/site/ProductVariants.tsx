@@ -1,25 +1,26 @@
 "use client";
 
 import { useLanguage } from "@/components/site/LanguageProvider";
-import { WhatsAppIcon } from "@/components/site/WhatsAppIcon";
 import { type ProductVariant } from "@/lib/products";
 import { siteCopy } from "@/lib/site-copy";
-import { buildOrderLink } from "@/lib/whatsapp";
 
 /**
- * Daftar varian produk (mis. ukuran) beserta harganya.
+ * Daftar varian produk (mis. ukuran) yang bisa dipilih.
  *
- * Setiap baris adalah tautan WhatsApp: pesanan selalu diarahkan ke WhatsApp,
- * dengan nama produk dan variannya sudah tertulis di pesan. Varian tanpa harga
- * menampilkan "Tanya harga" - situs tidak pernah mengarang harga sendiri.
+ * Baris varian adalah tombol pemilih, bukan tautan: memilihnya memperbarui
+ * harga yang tampil dan pesan WhatsApp tombol pesan di halaman detail.
+ * Harga tiap varian ditampilkan apa adanya; bila kosong, label
+ * "Tanya harga" dipakai - situs tidak pernah mengarang harga sendiri.
  */
 export function ProductVariants({
-  productName,
   variants,
+  selectedIndex,
+  onSelect,
   className,
 }: {
-  productName: string;
   variants: ProductVariant[];
+  selectedIndex: number;
+  onSelect: (index: number) => void;
   className?: string;
 }) {
   const { language } = useLanguage();
@@ -27,46 +28,42 @@ export function ProductVariants({
 
   if (variants.length === 0) return null;
 
+  const selected = variants[selectedIndex];
+  const selectedPrice = selected?.price?.trim();
+
   return (
     <div className={className}>
       <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#C76845]">{copy.variantsTitle}</p>
-      <ul className="mt-2.5 grid gap-1.5">
+      <div className="mt-2.5 grid grid-cols-2 gap-1.5">
         {variants.map((variant, index) => {
-          const href = buildOrderLink(productName, language, variant.label);
-          const rowClass =
-            "flex items-center justify-between gap-3 rounded-xl border border-[#314B3A]/12 bg-white px-3.5 py-2.5";
-          const body = (
-            <>
-              <span className="text-sm font-bold text-[#334139]">{variant.label}</span>
-              <span className="flex shrink-0 items-center gap-2 text-[13px] font-semibold">
-                {variant.price ? (
-                  <span className="text-[#314B3A]">{variant.price}</span>
-                ) : (
-                  <span className="text-[#8A948C]">{copy.askPrice}</span>
-                )}
-                <WhatsAppIcon size={16} />
-              </span>
-            </>
-          );
-
+          const isActive = index === selectedIndex;
           return (
-            <li key={`${variant.label}-${index}`}>
-              {href ? (
-                <a
-                  className={`${rowClass} transition hover:border-[#C76845]/40 hover:bg-[#FBF9F3]`}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {body}
-                </a>
-              ) : (
-                <div className={rowClass}>{body}</div>
-              )}
-            </li>
+            <button
+              key={`${variant.label}-${index}`}
+              type="button"
+              onClick={() => onSelect(index)}
+              aria-pressed={isActive}
+              className={`rounded-xl border px-3.5 py-2.5 text-left text-sm font-bold transition-colors ${
+                isActive
+                  ? "border-[#C76845] bg-[#C76845] text-white"
+                  : "border-[#314B3A]/12 bg-white text-[#334139] hover:border-[#C76845]/40 hover:bg-[#FBF9F3]"
+              }`}
+            >
+              {variant.label}
+            </button>
           );
         })}
-      </ul>
+      </div>
+
+      <div className="mt-3 flex items-baseline justify-between gap-3 rounded-xl border border-[#314B3A]/10 bg-[#F7F5EE] px-3.5 py-3">
+        <span className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#748077]">
+          {selectedPrice ? copy.priceLabel : copy.priceFrom}
+        </span>
+        <span className={`text-base font-extrabold ${selectedPrice ? "text-[#314B3A]" : "text-[#C76845]"}`}>
+          {selectedPrice ? selectedPrice : copy.askPrice}
+        </span>
+      </div>
+
       <p className="mt-1.5 text-xs font-medium text-[#8A948C]">{copy.variantsHint}</p>
     </div>
   );
