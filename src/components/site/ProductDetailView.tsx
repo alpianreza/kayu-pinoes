@@ -135,23 +135,25 @@ export function ProductDetailView({ slug }: { slug: string }) {
               </h1>
               <p className="mt-5 max-w-md leading-7 text-[#536459]">{product.description}</p>
 
-              {product.variants && product.variants.length > 0 ? (
-                <ProductVariants className="mt-6" productName={product.name} variants={product.variants} />
-              ) : null}
+              <div className="w-full max-w-sm">
+                {product.variants && product.variants.length > 0 ? (
+                  <ProductVariants className="mt-6" productName={product.name} variants={product.variants} />
+                ) : null}
 
-              <dl className="mt-7 grid grid-cols-1 border-t border-[#314B3A]/10 sm:grid-cols-2">
-                {specs.map(([label, value], index) => (
-                  <div
-                    key={label}
-                    className={`border-b border-[#314B3A]/10 py-4 ${
-                      index % 2 === 0 ? "sm:pr-5" : "sm:border-l sm:border-[#314B3A]/10 sm:pl-5"
-                    }`}
-                  >
-                    <dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">{label}</dt>
-                    <dd className="mt-1.5 text-sm font-semibold leading-5 text-[#405047]">{value}</dd>
-                  </div>
-                ))}
-              </dl>
+                <dl className="mt-7 grid grid-cols-1 border-t border-[#314B3A]/10 sm:grid-cols-2">
+                  {specs.map(([label, value], index) => (
+                    <div
+                      key={label}
+                      className={`border-b border-[#314B3A]/10 py-3 ${
+                        index % 2 === 0 ? "sm:pr-4" : "sm:border-l sm:border-[#314B3A]/10 sm:pl-4"
+                      }`}
+                    >
+                      <dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">{label}</dt>
+                      <dd className="mt-1.5 text-[13px] font-semibold leading-5 text-[#405047]">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
 
               <div className="mt-7 flex flex-wrap items-center gap-4">
                 <OrderButton productName={product.name} />

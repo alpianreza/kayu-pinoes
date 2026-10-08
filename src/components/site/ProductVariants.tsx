@@ -30,15 +30,15 @@ export function ProductVariants({
   return (
     <div className={className}>
       <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#C76845]">{copy.variantsTitle}</p>
-      <ul className="mt-3 grid gap-2">
+      <ul className="mt-2.5 grid gap-1.5">
         {variants.map((variant, index) => {
           const href = buildOrderLink(productName, language, variant.label);
           const rowClass =
-            "flex items-center justify-between gap-3 rounded-2xl border border-[#314B3A]/12 bg-white px-4 py-3";
+            "flex items-center justify-between gap-3 rounded-xl border border-[#314B3A]/12 bg-white px-3.5 py-2.5";
           const body = (
             <>
-              <span className="font-bold text-[#334139]">{variant.label}</span>
-              <span className="flex shrink-0 items-center gap-2 text-sm font-semibold">
+              <span className="text-sm font-bold text-[#334139]">{variant.label}</span>
+              <span className="flex shrink-0 items-center gap-2 text-[13px] font-semibold">
                 {variant.price ? (
                   <span className="text-[#314B3A]">{variant.price}</span>
                 ) : (
@@ -67,7 +67,7 @@ export function ProductVariants({
           );
         })}
       </ul>
-      <p className="mt-2 text-xs font-medium text-[#8A948C]">{copy.variantsHint}</p>
+      <p className="mt-1.5 text-xs font-medium text-[#8A948C]">{copy.variantsHint}</p>
     </div>
   );
 }

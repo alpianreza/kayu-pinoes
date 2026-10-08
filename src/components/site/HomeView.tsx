@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Blocks,
@@ -12,7 +12,6 @@ import {
   Leaf,
   Sparkles,
   TreePine,
-  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { useLanguage } from "@/components/site/LanguageProvider";
 import { ProductImage } from "@/components/site/ProductImage";
-import { ProductVariants } from "@/components/site/ProductVariants";
 import { ProductSlideshow } from "@/components/site/ProductSlideshow";
 import { ToyArtwork } from "@/components/site/ToyArtwork";
 import { getLocalizedProducts, translations } from "@/lib/catalog-i18n";
@@ -65,13 +63,42 @@ function ProductVisual({ product, sizes }: { product: Product; sizes: string }) 
   return <ToyArtwork illustration={product.illustration} />;
 }
 
-const FAVORITES_STORAGE_KEY = "kayu-pinoes:favorites";
+/** Generator pseudo-acak deterministik 32 bit (mulberry32). */
+function mulberry32(seed: number) {
+  let state = seed | 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let value = Math.imul(state ^ (state >>> 15), 1 | state);
+    value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value;
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 /**
- * Durasi animasi keluar dialog spesifikasi. Pembongkaran isi ditunda sedikit
- * lebih lama daripada animasinya supaya tidak terpotong.
+ * Acak daftar dengan Fisher-Yates ber-seed: hasil pasti untuk seed yang
+ * sama, jadi galeri stabil selama satu kunjungan meski datanya disegarkan.
  */
-const CLOSE_ANIMATION_MS = 170;
+function shuffled<T>(items: T[], seed: number): T[] {
+  const result = items.slice();
+  const random = mulberry32(seed);
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const swapWith = Math.floor(random() * (i + 1));
+    const temp = result[i]!;
+    result[i] = result[swapWith]!;
+    result[swapWith] = temp;
+  }
+  return result;
+}
+
+const FAVORITES_STORAGE_KEY = "kayu-pinoes:favorites";
+const galleryDetailCopy = {
+  id: "Lihat detail",
+  en: "View details",
+  ar: "عرض التفاصيل",
+} as const;
+
+/** Jumlah kartu maksimum pada galeri beranda; sisanya acak per kunjungan. */
+const GALLERY_LIMIT = 8;
 
 /**
  * Isi halaman beranda.
@@ -83,15 +110,16 @@ const CLOSE_ANIMATION_MS = 170;
 export function HomeView() {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
-  const dialogRef = useRef<HTMLElement | null>(null);
-  const dialogTitleRef = useRef<HTMLHeadingElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const { language } = useLanguage();
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
-  const [closing, setClosing] = useState(false);
-  const closeTimerRef = useRef<number | null>(null);
   const [managedProducts, setManagedProducts] = useState<ManagedProduct[] | null>(null);
+  /**
+   * Acak 8 item galeri sekali per kunjungan. Nilai awal sengaja tetap agar
+   * HTML server dan render hidrasi pertama identik; seed baru dibuat sesudah
+   * mount dan selanjutnya stabil walau katalog disegarkan lewat polling.
+   */
+  const [gallerySeed, setGallerySeed] = useState(0);
+  const { language } = useLanguage();
   const copy = translations[language];
+  const viewDetailsLabel = galleryDetailCopy[language];
   const fallbackProducts = useMemo(() => getLocalizedProducts(language), [language]);
   const catalogProducts = useMemo(
     () =>
@@ -108,7 +136,12 @@ export function HomeView() {
         .map((product) => ({ src: product.imageUrl as string, alt: product.name })),
     [products],
   );
-  const selectedProduct = products.find((product) => product.id === selectedProductId) ?? null;
+  // Galeri beranda: 8 item acak per kunjungan (seed sekali per load,
+  // shuffle deterministik jadi tidak berubah saat katalog disegarkan).
+  const featuredProducts = useMemo(
+    () => shuffled(products, gallerySeed).slice(0, GALLERY_LIMIT),
+    [products, gallerySeed],
+  );
   const isRtl = copy.direction === "rtl";
   const heroTextAlignment = isRtl ? "items-end text-right" : "items-start";
   const arrowClass = isRtl ? "rotate-180" : undefined;
@@ -117,9 +150,6 @@ export function HomeView() {
   const heroBadgePosition = isRtl ? "left-6 sm:left-8" : "right-6 sm:right-8";
   const cardStartPosition = isRtl ? "right-4" : "left-4";
   const cardEndPosition = isRtl ? "left-3" : "right-3";
-  const dialogStartPosition = isRtl ? "right-5" : "left-5";
-  const dialogEndPosition = isRtl ? "left-4" : "right-4";
-  const detailCellClasses = isRtl ? "odd:pl-4 even:border-r even:pr-4" : "odd:pr-4 even:border-l even:pl-4";
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -135,6 +165,13 @@ export function HomeView() {
     );
 
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    // Diundi sekali setelah mount (hindari HTML server dan hidrasi berbeda);
+    // selama kunjungan ini tidak berubah lagi.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed harus diundi di klien agar hasil SSR tetap stabil
+    setGallerySeed(Math.floor(Math.random() * 0x7fffffff));
   }, []);
 
   useEffect(() => {
@@ -166,101 +203,12 @@ export function HomeView() {
     }
   }, [favorites, favoritesLoaded]);
 
-  useEffect(() => {
-    if (selectedProductId === null) return;
-    // Fokus awal ke judul agar pembaca layar mengumumkan nama produk.
-    dialogTitleRef.current?.focus();
-  }, [selectedProductId]);
-
-  // Bila halaman ditinggalkan saat animasi keluar berjalan, jangan biarkan
-  // timer menukar status komponen yang sudah lepas.
-  useEffect(
-    () => () => {
-      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
-    },
-    [],
-  );
-
   function toggleFavorite(productId: number) {
     setFavorites((current) =>
       current.includes(productId)
         ? current.filter((id) => id !== productId)
         : [...current, productId],
     );
-  }
-
-  /**
-   * Membuka dialog. Bila penutupan sebelumnya masih beranimasi, timer-nya
-   * dibatalkan supaya dialog tidak langsung hilang lagi setelah dibuka.
-   */
-  function openDetail(productId: number, trigger: HTMLButtonElement) {
-    if (closeTimerRef.current !== null) {
-      window.clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-
-    setClosing(false);
-    triggerRef.current = trigger;
-    setSelectedProductId(productId);
-  }
-
-  /**
-   * Menutup dialog dengan animasi keluar: penanda `closing` dipasang lebih
-   * dulu, isinya baru dibongkar setelah animasinya selesai. Fokus dikembalikan
-   * ke tombol pemicu seketika, tanpa menunggu pembongkaran.
-   */
-  function closeDetail() {
-    if (selectedProductId === null || closing) return;
-
-    triggerRef.current?.focus();
-    setClosing(true);
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    closeTimerRef.current = window.setTimeout(
-      () => {
-        closeTimerRef.current = null;
-        setSelectedProductId(null);
-        setClosing(false);
-      },
-      reduced ? 0 : CLOSE_ANIMATION_MS,
-    );
-  }
-
-  function handleDialogKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (event.key === "Escape") {
-      closeDetail();
-      return;
-    }
-
-    if (event.key !== "Tab") return;
-
-    const container = dialogRef.current;
-    if (!container) return;
-
-    const focusable = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
-      ),
-    );
-
-    if (focusable.length === 0) return;
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
-
-    // Jaga fokus tetap di dalam dialog selama dialog terbuka.
-    if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-      return;
-    }
-
-    if (event.shiftKey && (active === first || active === container)) {
-      event.preventDefault();
-      last.focus();
-    }
   }
 
   const categories = categoryStyles.map((style, index) => ({
@@ -273,9 +221,6 @@ export function HomeView() {
       lang={language}
       dir={copy.direction}
       className="min-h-dvh overflow-x-hidden bg-[#FBF9F3] text-[#27372D]"
-      onKeyDownCapture={(event) => {
-        if (selectedProduct && event.key === "Escape") closeDetail();
-      }}
     >
       <SiteHeader active="/" />
 
@@ -365,12 +310,22 @@ export function HomeView() {
           </div>
 
           <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => {
+            {featuredProducts.map((product) => {
               const liked = favorites.includes(product.id);
               return (
                 <article key={product.id} className="group min-w-0 transition-transform duration-200 ease-out hover:-translate-y-1">
-                  <div className="relative aspect-[1/1.08] overflow-hidden rounded-[1.7rem]" style={{ backgroundColor: product.surface }}>
-                    <span className={`absolute top-4 z-10 rounded-full bg-[#FBF9F3]/85 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#526259] ${cardStartPosition}`}>{product.age}</span>
+                  {/* Tombol hati di luar Link: elemen interaktif tidak boleh bersarang. */}
+                  <div className="relative">
+                    <Link
+                      href={`/products/${product.slug}`}
+                      aria-label={`${viewDetailsLabel}: ${product.name}`}
+                      className="block aspect-[1/1.08] overflow-hidden rounded-[1.7rem]"
+                      style={{ backgroundColor: product.surface }}
+                    >
+                      <span className={`absolute top-4 z-10 rounded-full bg-[#FBF9F3]/85 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#526259] ${cardStartPosition}`}>{product.age}</span>
+                      <span className="absolute inset-0 block transition-transform duration-500 ease-out group-hover:scale-[1.05]"><ProductVisual product={product} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" /></span>
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/[0.05] to-transparent" />
+                    </Link>
                     <button
                       className={`absolute top-3 z-10 grid size-10 place-items-center rounded-full bg-[#FBF9F3]/85 transition-colors hover:bg-white ${cardEndPosition} ${liked ? "text-[#C76845]" : "text-[#55645A]"}`}
                       aria-label={liked ? copy.gallery.removeFavorite(product.name) : copy.gallery.addFavorite(product.name)}
@@ -379,20 +334,14 @@ export function HomeView() {
                     >
                       <Heart size={18} fill={liked ? "currentColor" : "none"} />
                     </button>
-                    <span className="absolute inset-0 block transition-transform duration-500 ease-out group-hover:scale-[1.05]"><ProductVisual product={product} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" /></span>
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/[0.05] to-transparent" />
                   </div>
                   <div className="px-1 pt-4">
                     <p className="text-xs font-bold text-[#748077]">{product.category}</p>
                     <h3 className="mt-1 font-display text-xl tracking-[-0.04em] text-[#334139]">{product.name}</h3>
-                    <Button
-                      className="mt-4 w-full"
-                      variant="outline"
-                      size="sm"
-                      aria-haspopup="dialog"
-                      onClick={(event) => openDetail(product.id, event.currentTarget)}
-                    >
-                      {copy.gallery.viewSpecifications} <ArrowRight className={arrowClass} size={15} />
+                    <Button asChild className="mt-4 w-full" variant="outline" size="sm">
+                      <Link href={`/products/${product.slug}`}>
+                        {viewDetailsLabel} <ArrowRight className={arrowClass} size={15} />
+                      </Link>
                     </Button>
                   </div>
                 </article>
@@ -435,68 +384,6 @@ export function HomeView() {
           </div>
         </section>
       </main>
-
-      {selectedProduct && (
-        <div
-          className={`kp-modal-backdrop fixed inset-0 z-50 grid place-items-end bg-[#1F3025]/45 p-3 backdrop-blur-sm sm:place-items-center sm:p-6${closing ? " kp-modal-closing" : ""}`}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) closeDetail();
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="product-detail-title"
-            ref={dialogRef}
-            tabIndex={-1}
-            onKeyDown={handleDialogKeyDown}
-            className={`kp-modal-panel relative grid max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-[2rem] bg-[#FBF9F3] shadow-[0_24px_70px_rgba(31,48,37,0.25)] sm:grid-cols-[.85fr_1.15fr]${closing ? " kp-modal-closing" : ""}`}
-          >
-            <div className="relative min-h-64 overflow-hidden bg-[#E8EBDD] sm:min-h-full" style={{ backgroundColor: selectedProduct.surface }}>
-              <ProductVisual product={selectedProduct} sizes="(max-width: 640px) 100vw, 40vw" />
-              <span className={`absolute bottom-5 rounded-full bg-[#FBF9F3]/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#526259] ${dialogStartPosition}`}>
-                {selectedProduct.category}
-              </span>
-            </div>
-
-            <div className="p-6 sm:p-8">
-              <button
-                className={`absolute top-4 grid size-11 place-items-center rounded-full bg-[#FBF9F3]/90 text-[#435349] transition-colors hover:bg-white focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[#C76845] ${dialogEndPosition}`}
-                type="button"
-                aria-label={copy.detail.closeDetail(selectedProduct.name)}
-                onClick={closeDetail}
-              >
-                <X size={20} />
-              </button>
-              <p className="pr-12 text-xs font-extrabold uppercase tracking-[0.14em] text-[#C76845]">{copy.detail.collectionLabel}</p>
-              <h2 id="product-detail-title" ref={dialogTitleRef} tabIndex={-1} className="mt-3 font-display text-4xl leading-none tracking-[-0.055em] text-[#294332] focus:outline-none sm:text-5xl">
-                {selectedProduct.name}
-              </h2>
-              <p className="mt-5 max-w-md leading-7 text-[#536459]">{selectedProduct.description}</p>
-
-              {selectedProduct.variants && selectedProduct.variants.length > 0 ? (
-                <ProductVariants className="mt-6" productName={selectedProduct.name} variants={selectedProduct.variants} />
-              ) : null}
-
-              <dl className="mt-7 grid grid-cols-2 border-t border-[#314B3A]/10">
-                {[
-                  [copy.detail.age, selectedProduct.age],
-                  [copy.detail.wood, selectedProduct.wood],
-                  [copy.detail.dimensions, selectedProduct.dimensions],
-                  [copy.detail.finish, selectedProduct.finish],
-                  [copy.detail.contents, selectedProduct.contents],
-                  [copy.detail.care, selectedProduct.care],
-                ].map(([label, value]) => (
-                  <div key={label} className={`border-b border-[#314B3A]/10 py-4 ${detailCellClasses}`}>
-                    <dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">{label}</dt>
-                    <dd className="mt-1.5 text-sm font-semibold leading-5 text-[#405047]">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </section>
-        </div>
-      )}
 
       <SiteFooter />
     </div>

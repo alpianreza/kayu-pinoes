@@ -48,7 +48,6 @@ type Translation = {
     eyebrow: string;
     title: string;
     description: string;
-    viewSpecifications: string;
     addFavorite: (name: string) => string;
     removeFavorite: (name: string) => string;
   };
@@ -64,8 +63,6 @@ type Translation = {
     copy: string;
   }>;
   detail: {
-    collectionLabel: string;
-    closeDetail: (name: string) => string;
     age: string;
     wood: string;
     dimensions: string;
@@ -133,7 +130,6 @@ export const translations = {
       eyebrow: "galeri pilihan",
       title: "Setiap mainan, punya cerita.",
       description: "Lihat bahan, ukuran, dan detail kecil yang membentuk tiap koleksi.",
-      viewSpecifications: "Lihat spesifikasi",
       addFavorite: (name) => `Tambahkan ${name} ke favorit`,
       removeFavorite: (name) => `Hapus ${name} dari favorit`,
     },
@@ -150,8 +146,6 @@ export const translations = {
       { title: "Untuk dimainkan lama", copy: "Bentuk sederhana, ruang imajinasi yang tidak ada habisnya." },
     ],
     detail: {
-      collectionLabel: "Kayu Pinoes · koleksi",
-      closeDetail: (name) => `Tutup detail ${name}`,
       age: "Usia disarankan",
       wood: "Jenis kayu",
       dimensions: "Ukuran",
@@ -297,7 +291,6 @@ export const translations = {
       eyebrow: "selected gallery",
       title: "Every toy has a story.",
       description: "Discover the materials, measurements, and small details behind every collection.",
-      viewSpecifications: "View specifications",
       addFavorite: (name) => `Add ${name} to favourites`,
       removeFavorite: (name) => `Remove ${name} from favourites`,
     },
@@ -314,8 +307,6 @@ export const translations = {
       { title: "Made for years of play", copy: "Simple forms with room for imagination that never runs out." },
     ],
     detail: {
-      collectionLabel: "Kayu Pinoes · collection",
-      closeDetail: (name) => `Close ${name} details`,
       age: "Recommended age",
       wood: "Wood type",
       dimensions: "Dimensions",
@@ -461,7 +452,6 @@ export const translations = {
       eyebrow: "معرض مختار",
       title: "لكل لعبة حكاية.",
       description: "تعرّف إلى المواد والمقاسات والتفاصيل الصغيرة التي تُكمل كل مجموعة.",
-      viewSpecifications: "عرض المواصفات",
       addFavorite: (name) => `أضف ${name} إلى المفضلة`,
       removeFavorite: (name) => `أزل ${name} من المفضلة`,
     },
@@ -478,8 +468,6 @@ export const translations = {
       { title: "للعب طويل الأمد", copy: "أشكال بسيطة ومساحة لخيال لا ينتهي." },
     ],
     detail: {
-      collectionLabel: "كايو بينويس · المجموعة",
-      closeDetail: (name) => `أغلق تفاصيل ${name}`,
       age: "العمر المقترح",
       wood: "نوع الخشب",
       dimensions: "المقاسات",
