@@ -119,7 +119,7 @@ export function normalizeImages(value: unknown): ProductImageItem[] {
 }
 
 /**
- * Validasi runtime dokumen Firestore.
+ * Validasi runtime catatan produk dari server data.
  *
  * Dokumen bisa dibuat dari Console, oleh versi UI yang lebih lama, atau saat
  * skema berubah. Sebelumnya data dipercaya lewat `as ProductRecord`, sehingga
@@ -180,7 +180,7 @@ function readTranslation(
 }
 
 /**
- * Ubah satu dokumen Firestore menjadi `Product` siap render.
+ * Ubah satu catatan produk (server data) menjadi `Product` siap render.
  *
  * Fallback berlapis: bahasa yang diminta -> bahasa Indonesia -> katalog statis
  * (berdasarkan `id`) -> terjemahan kosong. Dengan begitu kartu produk tidak

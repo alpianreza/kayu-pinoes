@@ -2,12 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Foto produk diunggah ke Firebase Storage, sehingga next/image perlu izin
-    // untuk domain tersebut. Daftarnya sengaja dipersempit ke bucket milik
-    // project ini saja, bukan wildcard ke semua bucket Firebase.
+    // Foto hasil unggahan panel admin disimpan di Supabase Storage; izin
+    // domain tetap dipersempit ke project ini saja. Foto bawaan "/images/..."
+    // tidak butuh entri di sini.
     remotePatterns: [
-      { protocol: "https", hostname: "firebasestorage.googleapis.com" },
-      { protocol: "https", hostname: "kayu-pinoes.firebasestorage.app" },
+      { protocol: "https", hostname: "aoawbhhnpndntqziefjv.supabase.co" },
     ],
   },
   async redirects() {

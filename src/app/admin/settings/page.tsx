@@ -138,8 +138,8 @@ export default function AdminSettingsPage() {
             <span className="font-bold text-[#27372D]">PostgreSQL Row Level Security (RLS)</span>
           </li>
           <li className="flex justify-between py-2.5">
-            <span>Firebase Status</span>
-            <span className="font-bold text-[#2F5236]">Dihapus Sepenuhnya (Cleaned)</span>
+            <span>Database</span>
+            <span className="font-bold text-[#2F5236]">Supabase PostgreSQL (aktif)</span>
           </li>
         </ul>
       </div>

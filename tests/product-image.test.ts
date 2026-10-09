@@ -16,7 +16,7 @@ test("isLocalImageSource recognises project files", () => {
 });
 
 test("isLocalImageSource treats every other form as external", () => {
-  assert.equal(isLocalImageSource("https://firebasestorage.googleapis.com/v0/b/x/o/y.png"), false);
+  assert.equal(isLocalImageSource("https://aoawbhhnpndntqziefjv.supabase.co/storage/v1/object/public/produk/x.png"), false);
   assert.equal(isLocalImageSource("http://example.com/foto.jpg"), false);
   // Alamat protokol-relatif dan path relatif juga bukan berkas proyek.
   assert.equal(isLocalImageSource("//cdn.example.com/foto.jpg"), false);

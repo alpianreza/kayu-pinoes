@@ -180,7 +180,7 @@ export type ValidationOptions = {
  *
  * Aturan yang bergantung koleksi (ID/alamat sudah dipakai?) masuk sebagai
  * superRefine lewat options, karena hanya pemanggil yang tahu isi koleksinya.
- * Validasi KEAMANAN tetap di firestore.rules - ini hanya penjaga kenyamanan.
+ * Validasi KEAMANAN tetap di aturan RLS database (Supabase) - ini hanya penjaga kenyamanan.
  */
 const translationShape = {
   name: z.string(),
@@ -202,8 +202,8 @@ const productFormBase = z.object({
   surface: z.string(),
   accent: z.string(),
   // Enum, bukan string bebas: kunci ilustrasi yang tidak dikenal ToyArtwork
-  // mustahil lolos validasi - sama ketatnya dengan isIllustration() di
-  // firestore.rules.
+  // mustahil lolos validasi - sama ketatnya dengan constraint illustration
+  // di skema database (supabase/migrations/001_initial_schema.sql).
   illustration: z.enum(productIllustrations),
   imageUrl: z.string(),
   imagePath: z.string(),

@@ -71,7 +71,7 @@ export async function fetchManagedProducts(): Promise<ManagedProduct[]> {
   return fetchProductRows(null);
 }
 
-/** Jeda antar-penyegaran daftar (dulu realtime Firestore, kini polling ringan). */
+/** Jeda antar-penyegaran daftar (dulu realtime, kini polling ringan). */
 const POLL_INTERVAL_MS = 30_000;
 
 function startPolling(
