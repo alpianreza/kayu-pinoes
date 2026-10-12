@@ -32,6 +32,11 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   const copy = siteCopy[language].detail;
   // Arah panah ikut arah baca: di RTL "selanjutnya" berarti ke kiri.
   const arrowClass = language === "ar" ? "rotate-180" : undefined;
+  // Harga ringkas untuk kartu: varian pertama yang punya harga. Bila belum
+  // ada harga sama sekali, kartu menampilkan "Tanya harga" - situs tidak
+  // pernah mengarang angka.
+  const priceText =
+    (product.variants ?? []).find((variant) => variant.price.trim().length > 0)?.price.trim() ?? "";
 
   return (
     <article className="kp-card group flex min-w-0 flex-col overflow-hidden rounded-[1.25rem] border border-[#314B3A]/10 bg-white sm:rounded-[1.7rem] transition-transform duration-200 hover:-translate-y-1">
@@ -64,16 +69,14 @@ export function ProductCard({ product, priority = false }: { product: Product; p
         <h3 className="mt-1 font-display text-base leading-snug tracking-[-0.04em] text-[#334139] sm:text-xl">{product.name}</h3>
         <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-[#68766D] sm:mt-2 sm:line-clamp-3 sm:text-sm sm:leading-6">{product.description}</p>
 
-        <dl className="mt-3 grid gap-1 border-t border-[#314B3A]/10 pt-2.5 text-[11px] text-[#536459] sm:mt-4 sm:pt-3 sm:text-xs">
-          <div className="flex gap-2">
-            <dt className="w-[4.25rem] shrink-0 font-bold text-[#748077] sm:w-24">{copy.specs.wood}</dt>
-            <dd className="font-semibold">{product.wood}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-[4.25rem] shrink-0 font-bold text-[#748077] sm:w-24">{copy.specs.dimensions}</dt>
-            <dd className="font-semibold">{product.dimensions}</dd>
-          </div>
-        </dl>
+        <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 border-t border-[#314B3A]/10 pt-2.5 sm:mt-4 sm:pt-3">
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#748077] sm:text-xs">
+            {copy.priceLabel}
+          </span>
+          <span className={`text-sm font-extrabold sm:text-base ${priceText ? "text-[#314B3A]" : "text-[#C76845]"}`}>
+            {priceText || copy.askPrice}
+          </span>
+        </p>
 
         <Button asChild className="mt-3.5 w-full sm:mt-5" variant="outline" size="sm">
           <Link href={`/products/${product.slug}`}>

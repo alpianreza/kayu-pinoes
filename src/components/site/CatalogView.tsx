@@ -98,15 +98,11 @@ export function CatalogView() {
       <SiteHeader active="/products" />
 
       <main id="content">
-        <section className="mx-auto max-w-7xl px-5 pb-7 pt-9 sm:px-8 lg:px-10 lg:pt-12">
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#C76845]">{copy.eyebrow}</p>
-          <h1 className="font-display mt-3 max-w-3xl text-3xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
-            {copy.title}
-          </h1>
-          <p className="mt-5 max-w-2xl leading-7 text-[#536459]">{copy.intro}</p>
-        </section>
+        {/* Judul halaman tetap ada untuk pembaca layar & mesin pencari,
+            tetapi tidak ditampilkan supaya daftar produk langsung terlihat. */}
+        <h1 className="sr-only">{copy.title}</h1>
 
-        <section className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        <section className="mx-auto max-w-7xl px-5 pt-7 sm:px-8 sm:pt-9 lg:px-10 lg:pt-12">
           <div className="rounded-[1.7rem] border border-[#314B3A]/10 bg-white p-5 sm:p-6">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)_minmax(0,.8fr)]">
               <label className="block">

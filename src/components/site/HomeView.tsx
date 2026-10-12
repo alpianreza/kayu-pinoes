@@ -225,10 +225,10 @@ export function HomeView() {
       <SiteHeader active="/" />
 
       <main id="content">
-        <section className="mx-auto max-w-7xl px-5 pb-14 pt-7 sm:px-8 sm:pt-10 lg:px-10 lg:pb-20">
+        <section className="mx-auto max-w-7xl px-5 pb-10 pt-4 sm:px-8 sm:pb-14 sm:pt-10 lg:px-10 lg:pb-20">
           <div className="relative grid overflow-hidden rounded-[2.2rem] bg-[#E8EBDD] lg:grid-cols-[1.03fr_.97fr]">
-            <div className={`relative z-10 flex flex-col px-7 py-11 sm:px-12 sm:py-16 lg:px-16 lg:py-20 ${heroTextAlignment}`}>
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#314B3A]/10 bg-[#FBF9F3]/80 px-3.5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#49604E]">
+            <div className={`relative z-10 flex flex-col px-6 py-8 sm:px-12 sm:py-16 lg:px-16 lg:py-20 ${heroTextAlignment}`}>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#314B3A]/10 bg-[#FBF9F3]/80 px-3.5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#49604E] sm:mb-6">
                 <Sparkles size={14} />
                 {copy.hero.eyebrow}
               </div>
@@ -236,24 +236,24 @@ export function HomeView() {
                 {copy.hero.title[0]}
                 <span className="block text-[#C76845]">{copy.hero.title[1]}</span>
               </h1>
-              <p className="mt-6 max-w-md text-[1.02rem] leading-7 text-[#536459] sm:text-lg">
+              <p className="mt-4 max-w-md text-[1.02rem] leading-7 text-[#536459] sm:mt-6 sm:text-lg">
                 {copy.hero.description}
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg">
+              <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-8">
+                <Button asChild size="lg" className="h-11 px-5 text-sm sm:h-13 sm:px-6 sm:text-base">
                   <Link href="/products">{copy.hero.browseCollection} <ArrowRight className={arrowClass} size={18} /></Link>
                 </Button>
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="outline" size="lg" className="h-11 px-5 text-sm sm:h-13 sm:px-6 sm:text-base">
                   <Link href="/about">{copy.hero.meetBrand}</Link>
                 </Button>
               </div>
-              <div className="mt-12 flex flex-wrap gap-x-7 gap-y-4 text-sm text-[#526259]">
+              <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2.5 text-sm text-[#526259] sm:mt-12 sm:gap-x-7 sm:gap-y-4">
                 <span className="flex items-center gap-2"><Leaf size={17} className="text-[#527A58]" /> {copy.hero.selectedWood}</span>
                 <span className="flex items-center gap-2"><TreePine size={17} className="text-[#527A58]" /> {copy.hero.madeWithCare}</span>
               </div>
             </div>
 
-            <div className="relative min-h-[390px] overflow-hidden sm:min-h-[470px] lg:min-h-full">
+            <div className="relative min-h-[250px] overflow-hidden sm:min-h-[470px] lg:min-h-full">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_84%_22%,rgba(247,216,191,.9),transparent_25%),radial-gradient(circle_at_13%_93%,rgba(214,232,241,.8),transparent_25%)]" />
               <Image
                 src="/images/pinoes-hero-toys.png"

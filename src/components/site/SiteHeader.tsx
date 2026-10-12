@@ -58,15 +58,20 @@ export function SiteHeader({ active }: { active?: string }) {
             <ContactButton compact />
           </div>
 
-          <button
-            className="grid size-11 place-items-center rounded-full transition-colors hover:bg-[#EEF1E9] md:hidden"
-            aria-label={open ? copy.closeMenu : copy.openMenu}
-            aria-expanded={open}
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-          >
-            {open ? <X size={21} /> : <Menu size={22} />}
-          </button>
+          <div className="flex items-center gap-1 md:hidden">
+            {/* Pemilih bahasa tampil di bilah atas juga di ponsel, supaya
+                pengunjung langsung tahu situs ini multibahasa. */}
+            <LanguageSwitcher />
+            <button
+              className="grid size-11 place-items-center rounded-full transition-colors hover:bg-[#EEF1E9]"
+              aria-label={open ? copy.closeMenu : copy.openMenu}
+              aria-expanded={open}
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+            >
+              {open ? <X size={21} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
 
         {open ? (
@@ -85,7 +90,6 @@ export function SiteHeader({ active }: { active?: string }) {
                 </Link>
               ))}
               <div className="mt-3 grid gap-3 border-t border-[#314B3A]/10 pt-4">
-                <LanguageSwitcher />
                 <ContactButton />
               </div>
             </div>
