@@ -13,7 +13,7 @@ export function BrandLockup({ href = "/", className }: { href?: string; classNam
     <Link
       href={href}
       className={`group flex items-center gap-2.5 ${className ?? ""}`}
-      aria-label="Kayu Pinoes — Woodentoys and Montessori"
+      aria-label="Kayu Pinoes — Wooden toys and Montessori"
     >
       <Image
         src="/images/brand/logo-mark.png"
@@ -29,7 +29,7 @@ export function BrandLockup({ href = "/", className }: { href?: string; classNam
         </span>
         <Image
           src="/images/brand/logo-tagline@4x.png"
-          alt="Woodentoys and Montessori"
+          alt="Wooden toys and Montessori"
           width={748}
           height={104}
           className="mt-1.5 h-[13px] w-auto"

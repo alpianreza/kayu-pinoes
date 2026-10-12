@@ -4,6 +4,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import "./globals.css";
 
+import { DocumentTitle } from "@/components/site/DocumentTitle";
 import { LanguageProvider } from "@/components/site/LanguageProvider";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageDirections, languageMetadata } from "@/lib/locale-metadata";
@@ -101,7 +102,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* NuqsAdapter menghubungkan hook nuqs ke router Next.js; dipakai
             CatalogView untuk menyimpan filter katalog di URL. */}
         <NuqsAdapter>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            <DocumentTitle />
+            {children}
+          </LanguageProvider>
         </NuqsAdapter>
       </body>
     </html>

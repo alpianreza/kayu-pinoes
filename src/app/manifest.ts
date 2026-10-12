@@ -5,7 +5,7 @@ import { languageDirections } from "@/lib/locale-metadata";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Kayu Pinoes — Woodentoys and Montessori",
+    name: "Kayu Pinoes — Wooden toys and Montessori",
     short_name: "Kayu Pinoes",
     description:
       "Galeri mainan kayu Kayu Pinoes yang dibuat untuk tangan kecil dan imajinasi besar.",

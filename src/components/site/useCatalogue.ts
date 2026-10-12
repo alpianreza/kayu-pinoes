@@ -22,6 +22,7 @@ export type CatalogueSource = "statis" | "supabase";
 export function useCatalogue(language: Language = "id"): {
   products: ReturnType<typeof getLocalizedProducts>;
   source: CatalogueSource;
+  ready: boolean;
 } {
   const [managed, setManaged] = useState<ManagedProduct[] | null>(null);
 
@@ -34,6 +35,11 @@ export function useCatalogue(language: Language = "id"): {
     );
   }, []);
 
+  // `ready` = percobaan baca server data pertama sudah selesai (atau server data
+  // memang belum dikonfigurasi). Halaman detail memakainya supaya produk dari
+  // CMS tidak sempat tampil "tidak ditemukan" selagi daftar masih dimuat.
+  const ready = !isSupabaseConfigured || managed !== null;
+
   const staticProducts = useMemo(() => getLocalizedProducts(language), [language]);
 
   const serverProducts = useMemo(
@@ -45,8 +51,8 @@ export function useCatalogue(language: Language = "id"): {
   );
 
   if (serverProducts.length === 0) {
-    return { products: staticProducts, source: "statis" };
+    return { products: staticProducts, source: "statis", ready };
   }
 
-  return { products: serverProducts, source: "supabase" };
+  return { products: serverProducts, source: "supabase", ready };
 }

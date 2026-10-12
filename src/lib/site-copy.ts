@@ -62,6 +62,10 @@ export type SiteCopy = {
     priceLabel: string;
     /** Baris harga sebelum varian dipilih, mis. "Mulai dari". */
     priceFrom: string;
+    /** Teks pembaca layar untuk tombol-tombol galeri foto. */
+    photoLabel: (index: number, total: number) => string;
+    /** Ditampilkan selagi daftar produk dari server data masih dimuat. */
+    loading: string;
     specs: {
       age: string;
       wood: string;
@@ -144,7 +148,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       emptyTitle: "Tidak ada yang cocok",
       emptyBody: "Coba kata kunci lain, atau longgarkan filter usia dan kategori.",
       orderEyebrow: "Cara memesan",
-      orderTitle: "Kami juga menerima pesanan custom.",
+      orderTitle: "Kami juga menerima pesanan khusus.",
       orderBody: "Sebutkan produk yang kamu minati, atau ceritakan ide yang belum ada di katalog — ukuran lain, warna lain, satu set untuk hadiah, sampai desain yang dibuat dari nol. Kirim lewat WhatsApp, dan kami balas soal ketersediaan, ukuran, serta pengiriman.",
     },
     detail: {
@@ -164,6 +168,10 @@ export const siteCopy: Record<Language, SiteCopy> = {
       variantsHint: "Pilih varian untuk melihat harganya; pesan lewat WhatsApp.",
       priceLabel: "Harga",
       priceFrom: "Mulai dari",
+      /** Teks pembaca layar untuk tombol-tombol galeri foto. */
+      photoLabel: (index, total) => `Tampilkan foto ${index} dari ${total}`,
+      /** Ditampilkan selagi daftar produk dari server data dimuat. */
+      loading: "Memuat produk…",
       specs: {
         age: "Usia disarankan",
         wood: "Jenis kayu",
@@ -188,11 +196,11 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ],
       values: [
         { title: "Dibuat perlahan", copy: "Setiap sudut diampelas halus agar nyaman disentuh." },
-        { title: "Aman untuk si kecil", copy: "Finishing berbasis air dan material yang terpilih." },
+        { title: "Aman untuk si kecil", copy: "Finishing berbasis air dan bahan yang terpilih." },
         { title: "Untuk dimainkan lama", copy: "Bentuk sederhana, ruang imajinasi yang tidak ada habisnya." },
       ],
       ctaEyebrow: "Lihat sendiri",
-      ctaTitle: (count) => `${count} koleksi, lengkap dengan ukurannya.`,
+      ctaTitle: (count) => `${count} produk, lengkap dengan ukurannya.`,
       ctaButton: "Buka katalog",
     },
     contact: {
@@ -208,9 +216,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       configuredBody: "Pemesanan dan pertanyaan dilayani lewat WhatsApp pada jam kerja.",
       destination: "Nomor tujuan",
       beforeTitle: "Sebelum menghubungi",
-      before: ["Sebutkan produk yang diminati, atau ceritakan idemu.", "Sebutkan jumlahnya bila lebih dari satu.", "Untuk hadiah atau pesanan custom, sebutkan tanggal dan ukuran yang diinginkan."],
+      before: ["Sebutkan produk yang diminati, atau ceritakan idemu.", "Sebutkan jumlahnya bila lebih dari satu.", "Untuk hadiah atau pesanan khusus, sebutkan tanggal dan ukuran yang diinginkan."],
       ctaEyebrow: "Masih memilih?",
-      ctaTitle: (count) => `${count} koleksi lengkap dengan spesifikasinya.`,
+      ctaTitle: (count) => `${count} produk lengkap dengan spesifikasinya.`,
       ctaButton: "Buka katalog",
     },
     order: {
@@ -277,6 +285,10 @@ export const siteCopy: Record<Language, SiteCopy> = {
       variantsHint: "Choose an option to see its price; order through WhatsApp.",
       priceLabel: "Price",
       priceFrom: "From",
+      /** Teks pembaca layar untuk tombol-tombol galeri foto. */
+      photoLabel: (index, total) => `Show photo ${index} of ${total}`,
+      /** Ditampilkan selagi daftar produk dari server data dimuat. */
+      loading: "Loading product…",
       specs: {
         age: "Recommended age",
         wood: "Wood",
@@ -295,7 +307,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       processTitle: "Four steps, and nothing rushed.",
       process: [
         { title: "Material", copy: "Solid pine for the arches and blocks, solid rubberwood for the little car, plywood birch for the puzzle board." },
-        { title: "Form", copy: "Simple shapes that do not tell a child how to play. They decide." },
+        { title: "Form", copy: "Simple shapes that do not tell a child how to play. The child decides." },
         { title: "Finish", copy: "Water-based paint with a matte finish — not slippery to hold, and the wood grain is left visible on purpose." },
         { title: "Care", copy: "Wipe with a damp cloth, then dry. No special soap, no extra coating needed." },
       ],
@@ -314,7 +326,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       intro: "Beyond the collection, we take all kinds of requests: another size, another colour, a gift set, or a toy designed from scratch. Name a piece from the catalog or describe your idea, and we will reply with what is possible.",
       steps: [
         { title: "Browse the catalog", copy: "Every piece is listed with its material, dimensions, and what comes in the set." },
-        { title: "Name the piece", copy: "Open a product page and press the order button — the product name is written into the message for you. For a custom request, just describe your idea in the same message." },
+        { title: "Name the piece", copy: "Open a product page and press the order button — the product name is added to the message for you. For a custom request, just describe your idea in the same message." },
         { title: "We reply", copy: "We answer about availability, size, and shipping. Price and payment come after that." },
       ],
       asideTitle: "Get in touch",
@@ -389,11 +401,15 @@ export const siteCopy: Record<Language, SiteCopy> = {
       variantsHint: "اختر خيارًا لعرض سعره؛ واطلب عبر واتساب.",
       priceLabel: "السعر",
       priceFrom: "ابتداءً من",
+      /** Teks pembaca layar untuk tombol-tombol galeri foto. */
+      photoLabel: (index, total) => `عرض الصورة ${index} من ${total}`,
+      /** Ditampilkan selagi daftar produk dari server data dimuat. */
+      loading: "جارٍ تحميل المنتج…",
       specs: {
         age: "العمر المقترح",
         wood: "نوع الخشب",
         dimensions: "المقاسات",
-        finish: "التشطيب",
+        finish: "الطلاء",
         contents: "محتويات المجموعة",
         care: "العناية",
       },
@@ -407,13 +423,13 @@ export const siteCopy: Record<Language, SiteCopy> = {
       processTitle: "أربع خطوات، دون عجلة.",
       process: [
         { title: "المادة", copy: "خشب صنوبر صلب للأقواس والمكعبات، وخشب مطاط صلب للسيارة الصغيرة، وخشب بتولا رقائقي للوح الأحجية." },
-        { title: "الشكل", copy: "أشكال بسيطة لا تملي على الطفل طريقة اللعب. هو من يقرر." },
-        { title: "التشطيب", copy: "طلاء مائي بتشطيب مطفي — غير زلق عند الإمساك، وتُترك عروق الخشب ظاهرة عن قصد." },
+        { title: "الشكل", copy: "أشكال بسيطة لا تملي على الطفل طريقة اللعب. الطفل هو من يقرر." },
+        { title: "الطلاء", copy: "طلاء مائي بتشطيب مطفي — غير زلق عند الإمساك، وتُترك عروق الخشب ظاهرة عن قصد." },
         { title: "العناية", copy: "يُمسح بقطعة قماش مبللة ثم يُجفف. دون صابون خاص أو طبقة إضافية." },
       ],
       values: [
         { title: "صُنعت على مهل", copy: "كل زاوية مصقولة بسلاسة لتكون مريحة عند اللمس." },
-        { title: "آمنة للصغار", copy: "تشطيبات مائية ومواد مختارة بعناية." },
+        { title: "آمنة للصغار", copy: "دهانات مائية ومواد مختارة بعناية." },
         { title: "للعب طويل الأمد", copy: "أشكال بسيطة ومساحة لخيال لا ينتهي." },
       ],
       ctaEyebrow: "شاهد بنفسك",
@@ -427,7 +443,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       steps: [
         { title: "تصفّح الكتالوج", copy: "كل قطعة مدرجة مع موادها ومقاساتها ومحتوياتها." },
         { title: "اذكر القطعة", copy: "افتح صفحة المنتج واضغط زر الطلب — يُكتب اسم المنتج في الرسالة تلقائيًا. للطلبات الخاصة، اكتب فكرتك في الرسالة نفسها." },
-        { title: "نرد عليك", copy: "نجيب بشأن التوفر والمقاس والشحن. ثم يأتي السعر والدفع بعد ذلك." },
+        { title: "نرد عليك", copy: "نجيب بشأن التوفر والمقاس والشحن. ثم يأتي السعر والدفع." },
       ],
       asideTitle: "تواصل معنا",
       configuredBody: "تُدار الطلبات والأسئلة عبر واتساب خلال ساعات العمل.",

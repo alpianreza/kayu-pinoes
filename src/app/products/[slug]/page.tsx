@@ -6,7 +6,7 @@ import { getLocalizedProducts } from "@/lib/catalog-i18n";
 import { getPublishedProducts } from "@/lib/supabase-products";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates } from "@/lib/locale-metadata";
-import { productSeeds, productSlugs, staticProductSlug, type Product } from "@/lib/products";
+import { productSlugs, staticProductSlug, type Product } from "@/lib/products";
 
 /**
  * Kedelapan alamat bawaan dirender sekali saat build. Alamat lain tetap
@@ -86,12 +86,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     if (niceSlug) permanentRedirect(`/products/${niceSlug}`);
   }
 
-  // Angka yang tidak ada di katalog bawaan tetap diteruskan: halaman detail
-  // menyelesaikannya sendiri di sisi klien.
-  if (!/^\d+$/.test(slug)) {
-    const known = productSeeds.some((seed) => seed.slug === slug) || (await findProduct(slug));
-    if (!known) notFound();
-  }
+  // Produk dicari sekali di server: hasilnya dipakai untuk penjagaan 404
+  // sekaligus dikirim ke halaman sebagai isi awal, sehingga produk dari CMS
+  // langsung tampil utuh (tanpa kedipan "tidak ditemukan") dan isinya ikut
+  // ter-render di server.
+  const product = await findProduct(slug);
+  if (!/^\d+$/.test(slug) && !product) notFound();
 
-  return <ProductDetailView slug={slug} />;
+  return <ProductDetailView slug={slug} initialProduct={product} />;
 }

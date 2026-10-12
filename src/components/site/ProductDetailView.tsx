@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { OrderButton } from "@/components/site/OrderButton";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -16,11 +16,19 @@ import { useLanguage } from "@/components/site/LanguageProvider";
 import { languageDirections } from "@/lib/locale-metadata";
 import { Button } from "@/components/ui/button";
 import { siteCopy } from "@/lib/site-copy";
+import type { Product } from "@/lib/products";
 
-export function ProductDetailView({ slug }: { slug: string }) {
+export function ProductDetailView({
+  slug,
+  initialProduct,
+}: {
+  slug: string;
+  /** Produk yang sudah ditemukan di server; dipakai sebagai isi awal. */
+  initialProduct?: Product | null;
+}) {
   const { language } = useLanguage();
   const copy = siteCopy[language].detail;
-  const { products } = useCatalogue(language);
+  const { products, ready } = useCatalogue(language);
   // Chevron navigasi perlu diputar saat membaca dari kanan ke kiri.
   const chevronClass = language === "ar" ? "rotate-180" : undefined;
 
@@ -29,7 +37,9 @@ export function ProductDetailView({ slug }: { slug: string }) {
   const product =
     products.find((item) => item.slug === slug) ??
     products.find((item) => String(item.id) === slug) ??
+    initialProduct ??
     null;
+  const productName = product?.name ?? null;
 
   // Varian pertama terpilih sebagai awalan; bila katalog sempat menyusut
   // (produk dari server data), indeks dipotong ke rentang varian yang ada
@@ -42,6 +52,29 @@ export function ProductDetailView({ slug }: { slug: string }) {
 
   // Foto besar yang sedang tampil; thumbnail di bawahnya mengganti nilai ini.
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // Judul tab mengikuti nama produk dalam bahasa yang sedang aktif.
+  useEffect(() => {
+    if (productName) {
+      document.title = `${productName} — Kayu Pinoes`;
+    }
+  }, [productName]);
+
+  // Daftar produk belum selesai dibaca dari server data: tampilkan status
+  // memuat supaya produk dari CMS tidak sempat terlihat "tidak ditemukan".
+  if (!product && !ready) {
+    return (
+      <div lang={language} dir={languageDirections(language)} className="min-h-dvh bg-[#FBF9F3] text-[#27372D]">
+        <SiteHeader active="/products" />
+        <main id="content" className="mx-auto max-w-3xl px-5 py-16 sm:px-8">
+          <p aria-busy="true" className="text-center text-sm font-bold text-[#6B766E]">
+            {copy.loading}
+          </p>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -150,7 +183,7 @@ export function ProductDetailView({ slug }: { slug: string }) {
                         <button
                           type="button"
                           onClick={() => setSelectedImageIndex(index)}
-                          aria-label={`Tampilkan foto ${index + 1} dari ${gallery.length}`}
+                          aria-label={copy.photoLabel(index + 1, gallery.length)}
                           aria-current={isActive}
                           className={`relative block size-16 overflow-hidden rounded-xl border-2 transition-colors sm:size-20 ${
                             isActive

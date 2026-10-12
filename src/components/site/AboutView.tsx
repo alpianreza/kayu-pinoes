@@ -17,7 +17,7 @@ export function AboutView() {
   const { language } = useLanguage();
   const copy = siteCopy[language].about;
   // Jumlah produk diambil dari katalog yang sama dengan halaman publik, jadi
-  // tulisan "N koleksi" di ajakan tidak tertinggal ketika admin menambah
+  // tulisan "N produk" di ajakan tidak tertinggal ketika admin menambah
   // atau menyembunyikan produk.
   const { products } = useCatalogue(language);
 

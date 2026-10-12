@@ -113,12 +113,12 @@ export const translations = {
       title: ["Kecil di tangan,", "besar di imajinasi."],
       description: "Mainan kayu yang mengundang anak untuk menyentuh, membangun, dan menemukan cerita mereka sendiri.",
       browseCollection: "Jelajahi koleksi",
-      meetBrand: "Kenal Kayu Pinoes",
+      meetBrand: "Kenali Kayu Pinoes",
       selectedWood: "Kayu pilihan",
       madeWithCare: "Dibuat dengan hati",
       imageAlt: "Susunan mainan kayu pelangi, bebek tarik, balok, dan mobil kecil",
       waterBasedPaint: "Cat berbasis air, halus untuk tangan kecil.",
-      playBadge: "bermain",
+      playBadge: "mainan kayu",
     },
     collection: {
       eyebrow: "pilih cara bermain",
@@ -146,7 +146,7 @@ export const translations = {
     },
     values: [
       { title: "Dibuat perlahan", copy: "Setiap sudut diampelas halus agar nyaman disentuh." },
-      { title: "Aman untuk si kecil", copy: "Finishing berbasis air dan material yang terpilih." },
+      { title: "Aman untuk si kecil", copy: "Finishing berbasis air dan bahan yang terpilih." },
       { title: "Untuk dimainkan lama", copy: "Bentuk sederhana, ruang imajinasi yang tidak ada habisnya." },
     ],
     detail: {
@@ -281,7 +281,7 @@ export const translations = {
       madeWithCare: "Made with care",
       imageAlt: "An arrangement of rainbow, pull-duck, block, and small car wooden toys",
       waterBasedPaint: "Water-based paint, gentle for small hands.",
-      playBadge: "play",
+      playBadge: "wooden toys",
     },
     collection: {
       eyebrow: "choose how to play",
@@ -444,7 +444,7 @@ export const translations = {
       madeWithCare: "صُنعت بعناية",
       imageAlt: "تشكيلة من ألعاب خشبية على شكل قوس قزح وبطة سحب ومكعبات وسيارة صغيرة",
       waterBasedPaint: "ألوان مائية لطيفة على الأيدي الصغيرة.",
-      playBadge: "للعب",
+      playBadge: "ألعاب خشبية",
     },
     collection: {
       eyebrow: "اختر طريقة اللعب",
@@ -472,14 +472,14 @@ export const translations = {
     },
     values: [
       { title: "صُنعت على مهل", copy: "كل زاوية مصقولة بسلاسة لتكون مريحة عند اللمس." },
-      { title: "آمنة للصغار", copy: "تشطيبات مائية ومواد مختارة بعناية." },
+      { title: "آمنة للصغار", copy: "دهانات مائية ومواد مختارة بعناية." },
       { title: "للعب طويل الأمد", copy: "أشكال بسيطة ومساحة لخيال لا ينتهي." },
     ],
     detail: {
       age: "العمر المقترح",
       wood: "نوع الخشب",
       dimensions: "المقاسات",
-      finish: "التشطيب",
+      finish: "الطلاء",
       contents: "محتويات المجموعة",
       care: "العناية",
       variantsTitle: "الخيارات",
