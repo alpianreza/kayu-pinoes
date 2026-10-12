@@ -207,7 +207,7 @@ export function ProductDetailView({
 
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#C76845]">{product.category}</p>
-              <h1 className="font-display mt-3 text-4xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
+              <h1 className="font-display mt-3 text-3xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
                 {product.name}
               </h1>
               <p className="mt-5 max-w-md leading-7 text-[#536459]">{product.description}</p>
@@ -266,7 +266,7 @@ export function ProductDetailView({
               </Button>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3.5 sm:gap-5 lg:grid-cols-3">
               {others.map((item) => (
                 <ProductCard key={item.id} product={item} />
               ))}

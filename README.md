@@ -44,7 +44,7 @@ lalu jalankan ulang server setelah mengubahnya.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key — halaman yang sama |
 | `NEXT_PUBLIC_ADMIN_EMAIL` | Email admin (huruf kecil). Untuk gerbang tampilan; hak akses nyata ada di tabel `admin_users` |
 | `NEXT_PUBLIC_SITE_URL` | Alamat publik situs untuk sitemap/robots (mis. `https://kayu-pinoes.netlify.app`) |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Nomor WhatsApp format internasional tanpa `+`, mis. `62896220222910` |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Nomor WhatsApp format internasional tanpa `+`, mis. `6289622022910` |
 
 Semua nilai `NEXT_PUBLIC_*` terkirim ke browser — keamanan dijaga oleh RLS di
 database, bukan oleh kerahasiaan kunci anon.

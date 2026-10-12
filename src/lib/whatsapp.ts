@@ -90,8 +90,13 @@ export function buildOrderLinkForVariant(
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
 }
 
-/** Tampilan nomor yang enak dibaca, mis. +62 896 2202 22910. */
+/** Tampilan nomor yang enak dibaca, mis. +62 896-2202-2910. */
 export function formatWhatsappNumber(): string | null {
   if (!whatsappNumber) return null;
-  return `+${whatsappNumber.slice(0, 2)} ${whatsappNumber.slice(2)}`;
+  const body = whatsappNumber.slice(2);
+  // Nomor seluler Indonesia (62 + 11 angka) dikelompokkan 3-4-4 agar enak dibaca.
+  if (whatsappNumber.startsWith("62") && /^\d{11}$/.test(body)) {
+    return `+62 ${body.slice(0, 3)}-${body.slice(3, 7)}-${body.slice(7)}`;
+  }
+  return `+${whatsappNumber.slice(0, 2)} ${body}`;
 }

@@ -100,7 +100,7 @@ export function CatalogView() {
       <main id="content">
         <section className="mx-auto max-w-7xl px-5 pb-7 pt-9 sm:px-8 lg:px-10 lg:pt-12">
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#C76845]">{copy.eyebrow}</p>
-          <h1 className="font-display mt-3 max-w-3xl text-4xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
+          <h1 className="font-display mt-3 max-w-3xl text-3xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
             {copy.title}
           </h1>
           <p className="mt-5 max-w-2xl leading-7 text-[#536459]">{copy.intro}</p>
@@ -203,7 +203,7 @@ export function CatalogView() {
               </Button>
             </div>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3.5 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
               {visible.map((product, index) => (
                 <ProductCard key={product.id} product={product} priority={index < 2} />
               ))}

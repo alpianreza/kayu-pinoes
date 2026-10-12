@@ -232,7 +232,7 @@ export function HomeView() {
                 <Sparkles size={14} />
                 {copy.hero.eyebrow}
               </div>
-              <h1 className="font-display max-w-xl text-5xl font-medium leading-[0.94] tracking-[-0.065em] text-[#294332] sm:text-6xl lg:text-7xl">
+              <h1 className="font-display max-w-xl text-4xl font-medium leading-[0.94] tracking-[-0.065em] text-[#294332] sm:text-6xl lg:text-7xl">
                 {copy.hero.title[0]}
                 <span className="block text-[#C76845]">{copy.hero.title[1]}</span>
               </h1>
@@ -278,7 +278,7 @@ export function HomeView() {
           <div className="mb-8 flex flex-col justify-between gap-4 sm:mb-10 sm:flex-row sm:items-end">
             <div>
               <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#C76845]">{copy.collection.eyebrow}</p>
-              <h2 className="font-display text-4xl tracking-[-0.055em] text-[#294332] sm:text-5xl">{copy.collection.title}</h2>
+              <h2 className="font-display text-3xl tracking-[-0.055em] text-[#294332] sm:text-5xl">{copy.collection.title}</h2>
             </div>
             <Link href="/products" className="group inline-flex items-center gap-2 text-sm font-extrabold text-[#314B3A] hover:text-[#C76845]">
               {copy.collection.allCollections} <ArrowRight className={movingArrowClass} size={17} />
@@ -304,12 +304,12 @@ export function HomeView() {
           <div className="mb-8 flex flex-col gap-5 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#C76845]">{copy.gallery.eyebrow}</p>
-              <h2 className="font-display text-4xl tracking-[-0.055em] text-[#294332] sm:text-5xl">{copy.gallery.title}</h2>
+              <h2 className="font-display text-3xl tracking-[-0.055em] text-[#294332] sm:text-5xl">{copy.gallery.title}</h2>
             </div>
             <p className="max-w-xs text-sm leading-6 text-[#647168]">{copy.gallery.description}</p>
           </div>
 
-          <div className="grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-3.5 gap-y-7 sm:gap-x-5 sm:gap-y-9 lg:grid-cols-4">
             {featuredProducts.map((product) => {
               const liked = favorites.includes(product.id);
               return (
@@ -319,15 +319,15 @@ export function HomeView() {
                     <Link
                       href={`/products/${product.slug}`}
                       aria-label={`${viewDetailsLabel}: ${product.name}`}
-                      className="block aspect-[1/1.08] overflow-hidden rounded-[1.7rem]"
+                      className="block aspect-[1/1.08] overflow-hidden rounded-[1.25rem] sm:rounded-[1.7rem]"
                       style={{ backgroundColor: product.surface }}
                     >
-                      <span className={`absolute top-4 z-10 rounded-full bg-[#FBF9F3]/85 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-[#526259] ${cardStartPosition}`}>{product.age}</span>
-                      <span className="absolute inset-0 block transition-transform duration-500 ease-out group-hover:scale-[1.05]"><ProductVisual product={product} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" /></span>
+                      <span className={`absolute top-2.5 z-10 rounded-full bg-[#FBF9F3]/85 px-2 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-[#526259] sm:top-4 sm:px-3 sm:py-1.5 sm:text-[10px] ${cardStartPosition}`}>{product.age}</span>
+                      <span className="absolute inset-0 block transition-transform duration-500 ease-out group-hover:scale-[1.05]"><ProductVisual product={product} sizes="(max-width: 1024px) 50vw, 25vw" /></span>
                       <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/[0.05] to-transparent" />
                     </Link>
                     <button
-                      className={`absolute top-3 z-10 grid size-10 place-items-center rounded-full bg-[#FBF9F3]/85 transition-colors hover:bg-white ${cardEndPosition} ${liked ? "text-[#C76845]" : "text-[#55645A]"}`}
+                      className={`absolute top-2.5 z-10 grid size-8 place-items-center rounded-full sm:top-3 sm:size-10 bg-[#FBF9F3]/85 transition-colors hover:bg-white ${cardEndPosition} ${liked ? "text-[#C76845]" : "text-[#55645A]"}`}
                       aria-label={liked ? copy.gallery.removeFavorite(product.name) : copy.gallery.addFavorite(product.name)}
                       type="button"
                       onClick={() => toggleFavorite(product.id)}
@@ -335,10 +335,10 @@ export function HomeView() {
                       <Heart size={18} fill={liked ? "currentColor" : "none"} />
                     </button>
                   </div>
-                  <div className="px-1 pt-4">
-                    <p className="text-xs font-bold text-[#748077]">{product.category}</p>
-                    <h3 className="mt-1 font-display text-xl tracking-[-0.04em] text-[#334139]">{product.name}</h3>
-                    <Button asChild className="mt-4 w-full" variant="outline" size="sm">
+                  <div className="px-1 pt-3.5 sm:pt-4">
+                    <p className="text-[10px] font-bold text-[#748077] sm:text-xs">{product.category}</p>
+                    <h3 className="mt-1 font-display text-base leading-snug tracking-[-0.04em] text-[#334139] sm:text-xl">{product.name}</h3>
+                    <Button asChild className="mt-3.5 w-full sm:mt-4" variant="outline" size="sm">
                       <Link href={`/products/${product.slug}`}>
                         {viewDetailsLabel} <ArrowRight className={arrowClass} size={15} />
                       </Link>
@@ -355,7 +355,7 @@ export function HomeView() {
             <div className={`flex flex-col px-7 py-12 sm:px-12 sm:py-15 ${heroTextAlignment}`}>
               <div className="grid size-12 place-items-center rounded-2xl bg-[#F4C45D] text-[#314B3A]"><TreePine size={24} /></div>
               <p className="mt-9 text-xs font-extrabold uppercase tracking-[0.15em] text-[#F4C45D]">{copy.story.eyebrow}</p>
-              <h2 className="font-display mt-3 text-4xl leading-[.98] tracking-[-0.055em] sm:text-5xl">{copy.story.title}</h2>
+              <h2 className="font-display mt-3 text-3xl leading-[.98] tracking-[-0.055em] sm:text-5xl">{copy.story.title}</h2>
               <p className="mt-6 max-w-sm leading-7 text-[#D9E1D5]">{copy.story.description}</p>
               <Button asChild className="mt-8 bg-[#F9F4E8] text-[#314B3A] shadow-none hover:bg-white">
                 <Link href="/about">{copy.story.howWeMakeIt} <ArrowRight className={arrowClass} size={17} /></Link>

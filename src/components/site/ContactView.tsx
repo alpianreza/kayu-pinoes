@@ -26,7 +26,7 @@ export function ContactView() {
       <main id="content">
         <section className="mx-auto max-w-7xl px-5 pb-10 pt-9 sm:px-8 lg:px-10 lg:pt-12">
           <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#C76845]">{copy.eyebrow}</p>
-          <h1 className="font-display max-w-2xl text-4xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
+          <h1 className="font-display max-w-2xl text-3xl leading-[1.02] tracking-[-0.055em] text-[#294332] sm:text-5xl">
             {copy.title}
           </h1>
           <p className="mt-5 max-w-2xl leading-7 text-[#536459]">{copy.intro}</p>
