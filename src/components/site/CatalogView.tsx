@@ -27,11 +27,17 @@ import {
   type SortKey,
 } from "@/lib/catalogue";
 import { siteCopy } from "@/lib/site-copy";
+import type { Product } from "@/lib/products";
 
-export function CatalogView() {
+/**
+ * `initialProducts` diisi halaman /products dari server (data CMS terbaru),
+ * supaya render pertama - baik di server maupun di browser - menampilkan
+ * daftar yang sama dan tidak pernah kedipan produk lama.
+ */
+export function CatalogView({ initialProducts }: { initialProducts?: Product[] } = {}) {
   const { language } = useLanguage();
   const copy = siteCopy[language].catalog;
-  const { products } = useCatalogue(language);
+  const { products } = useCatalogue(language, initialProducts);
 
   // Filter hidup di URL lewat nuqs, bukan useState: tautan seperti
   // /products?q=pelangi&age=2-4 bisa dibagikan (situs ini pesan-melalui-WA),

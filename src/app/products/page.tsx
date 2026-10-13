@@ -168,7 +168,7 @@ export default async function CatalogPage() {
   // (build gagal dengan "missing-suspense-with-csr-bailout" tanpa ini).
   return (
     <Suspense fallback={<CatalogFallback products={products} />}>
-      <CatalogView />
+      <CatalogView initialProducts={products} />
     </Suspense>
   );
 }
