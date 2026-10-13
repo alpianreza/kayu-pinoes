@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import { InstagramIcon } from "@/components/site/InstagramIcon";
+
 import { OrderButton } from "@/components/site/OrderButton";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -54,6 +56,19 @@ export function ContactView() {
                   {copy.destination}: {numberLabel}
                 </p>
               ) : null}
+
+              {/* Tautan Instagram: kanal kedua setelah WhatsApp. */}
+              <a
+                href="https://instagram.com/kayupinoes"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex items-center gap-2.5 text-sm font-bold text-[#314B3A] transition-colors hover:text-[#C76845]"
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#EEF1E9] text-[#456C4D]">
+                  <InstagramIcon size={15} />
+                </span>
+                Instagram · @kayupinoes
+              </a>
 
               <div className="mt-7 border-t border-[#314B3A]/10 pt-5">
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">{copy.beforeTitle}</p>

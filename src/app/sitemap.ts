@@ -5,6 +5,10 @@ import { getPublishedProducts } from "@/lib/supabase-products";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates } from "@/lib/locale-metadata";
 
+// Sitemap dibuat ulang saat diminta supaya produk baru atau yang dihapus di
+// CMS langsung tercermin tanpa perlu build ulang.
+export const dynamic = "force-dynamic";
+
 /**
  * Peta situs dibangun dari NEXT_PUBLIC_SITE_URL. Bila variabel itu belum diisi,
  * sitemap sengaja kosong alih-alih memakai alamat karangan.
@@ -20,7 +24,7 @@ async function collectProductSlugs(base: string): Promise<MetadataRoute.Sitemap>
     const supabaseProducts = await getPublishedProducts(DEFAULT_LANGUAGE);
     if (supabaseProducts.length > 0) products = supabaseProducts;
   } catch {
-    // Server data tidak terjangkau saat build; pakai katalog bawaan.
+    // Server data tidak terjangkau; pakai katalog bawaan.
   }
 
   // Katalog bawaan dan server data bisa memuat slug yang sama.

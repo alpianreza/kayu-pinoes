@@ -7,6 +7,8 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { getLocalizedProducts } from "@/lib/catalog-i18n";
+import { getPublishedProducts } from "@/lib/supabase-products";
+import type { Product } from "@/lib/products";
 import { ageBuckets, sortOptions, type SortKey } from "@/lib/catalogue";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates, languageDirections, languageMetadata } from "@/lib/locale-metadata";
@@ -29,21 +31,26 @@ export const metadata: Metadata = {
   },
 };
 
+// Halaman katalog juga dirender saat diminta: sampul statis untuk mesin
+// pencari & pengunjung tanpa JavaScript memakai data CMS terbaru, bukan
+// daftar bawaan yang bisa usang.
+export const dynamic = "force-dynamic";
+
 /**
  * Sampul katalog yang benar-benar dirender di server.
  *
  * CatalogView memakai nuqs (membaca searchParams), jadi Next men-suspend
- * boundary-nya di server dan hanya fallback ini yang ikut ter-prerender.
+ * boundary-nya di server dan hanya fallback ini yang ikut dirender.
  * Kalau fallback-nya kerangka kosong, crawler dan pengunjung tanpa JavaScript
- * tidak melihat satu pun produk. Karena itu fallback diisi katalog statis yang
- * sebenarnya: judul, kisi produk, band pesan - memakai DEFAULT_LANGUAGE.
+ * tidak melihat satu pun produk. Karena itu fallback diisi katalog yang
+ * sebenarnya (data CMS saat tersedia): judul, kisi produk, band pesan -
+ * memakai DEFAULT_LANGUAGE.
  * Begitu JavaScript aktif, CatalogView menggantikan seluruh isi ini, jadi
  * markup statis di bawah cukup untuk mesin pencari, tidak perlu interaktif.
  */
-function CatalogFallback() {
+function CatalogFallback({ products }: { products: Product[] }) {
   const language = DEFAULT_LANGUAGE;
   const copy = siteCopy[language].catalog;
-  const products = getLocalizedProducts(language);
   const categories = Array.from(new Set(products.map((product) => product.category)));
   const sortLabels: Record<SortKey, string> = {
     catalog: copy.sortCatalog,
@@ -144,12 +151,23 @@ function CatalogFallback() {
   );
 }
 
-export default function CatalogPage() {
+export default async function CatalogPage() {
+  // Sampul statis memakai data CMS terbaru supaya markup awal (dan tampilan
+  // tanpa JavaScript) tidak pernah menampilkan produk yang sudah dihapus.
+  let products = getLocalizedProducts(DEFAULT_LANGUAGE);
+
+  try {
+    const live = await getPublishedProducts(DEFAULT_LANGUAGE);
+    if (live.length > 0) products = live;
+  } catch {
+    // Server data tidak terjangkau: katalog bawaan tetap dipakai.
+  }
+
   // Suspense WAJIB ada: hook nuqs di dalam CatalogView membaca searchParams,
-  // dan Next menolak halaman statis yang membacanya tanpa batas Suspense
+  // dan Next menolak render yang membacanya tanpa batas Suspense
   // (build gagal dengan "missing-suspense-with-csr-bailout" tanpa ini).
   return (
-    <Suspense fallback={<CatalogFallback />}>
+    <Suspense fallback={<CatalogFallback products={products} />}>
       <CatalogView />
     </Suspense>
   );

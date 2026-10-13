@@ -6,40 +6,34 @@ import { getLocalizedProducts } from "@/lib/catalog-i18n";
 import { getPublishedProducts } from "@/lib/supabase-products";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates } from "@/lib/locale-metadata";
-import { productSlugs, staticProductSlug, type Product } from "@/lib/products";
+import { staticProductSlug, type Product } from "@/lib/products";
+import { isSupabaseConfigured } from "@/lib/supabase";
+
+// Semua halaman detail dirender saat diminta (bukan sekali saat build), supaya
+// perubahan CMS - produk baru, produk yang dihapus, atau teks yang diperbaiki -
+// langsung berlaku tanpa build ulang. Produk yang tidak ada di CMS akan 404.
+export const dynamic = "force-dynamic";
 
 /**
- * Kedelapan alamat bawaan dirender sekali saat build. Alamat lain tetap
- * dilayani: produk yang dibuat lewat panel admin boleh punya alamat baru, dan
- * itu tidak mungkin diketahui saat build. Halaman seperti itu dirender saat
- * diminta, lalu disimpan sesuai `revalidate`.
- */
-export function generateStaticParams() {
-  return productSlugs().map((slug) => ({ slug }));
-}
-
-export const revalidate = 300;
-
-/**
- * Cari produk berdasarkan alamat, dari katalog bawaan lalu dari server data.
+ * Cari produk berdasarkan alamat dari server data (CMS).
  *
- * Sebelumnya halaman ini hanya mengenali alamat katalog bawaan dan menolak
- * sisanya dengan 404 - akibatnya produk yang dibuat admin tidak pernah bisa
- * dibuka, walaupun kartunya tampil di katalog. Aturan RLS hanya membuka
- * produk berstatus published untuk pengunjung, jadi aman dipanggil tanpa login.
+ * Server data diutamakan; katalog bawaan hanya dipakai bila server data tidak
+ * dikonfigurasi atau tidak bisa dihubungi. Dengan urutan ini, produk yang
+ * dihapus atau disembunyikan lewat panel admin langsung tidak bisa dibuka.
+ * Aturan RLS hanya membuka produk berstatus published untuk pengunjung, jadi
+ * aman dipanggil tanpa login.
  */
 async function findProduct(slug: string): Promise<Product | null> {
-  const staticProduct = getLocalizedProducts(DEFAULT_LANGUAGE).find((item) => item.slug === slug);
-  if (staticProduct) return staticProduct;
-
-  try {
-    const serverProducts = await getPublishedProducts(DEFAULT_LANGUAGE);
-    return serverProducts.find((item) => item.slug === slug) ?? null;
-  } catch {
-    // Server data tidak bisa dihubungi: alamat tak dikenal dianggap tidak ada,
-    // dan halaman bawaan tetap dilayani seperti biasa.
-    return null;
+  if (isSupabaseConfigured) {
+    try {
+      const serverProducts = await getPublishedProducts(DEFAULT_LANGUAGE);
+      return serverProducts.find((item) => item.slug === slug) ?? null;
+    } catch {
+      // Server data tidak bisa dihubungi: jatuh ke katalog bawaan di bawah.
+    }
   }
+
+  return getLocalizedProducts(DEFAULT_LANGUAGE).find((item) => item.slug === slug) ?? null;
 }
 
 export async function generateMetadata({
