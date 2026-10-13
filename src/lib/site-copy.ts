@@ -11,6 +11,7 @@ export type SiteCopy = {
     catalog: string;
     about: string;
     contact: string;
+    gallery: string;
     languageControl: string;
     openMenu: string;
     closeMenu: string;
@@ -103,6 +104,13 @@ export type SiteCopy = {
     ctaTitle: (productCount: number) => string;
     ctaButton: string;
   };
+  gallery: {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    loading: string;
+    empty: string;
+  };
   order: {
     button: string;
     chat: string;
@@ -121,6 +129,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       catalog: "Katalog",
       about: "Tentang",
       contact: "Kontak",
+      gallery: "Galeri",
       languageControl: "Pilih bahasa",
       openMenu: "Buka menu",
       closeMenu: "Tutup menu",
@@ -221,6 +230,13 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaTitle: (count) => `${count} produk lengkap dengan spesifikasinya.`,
       ctaButton: "Buka katalog",
     },
+    gallery: {
+      eyebrow: "Galeri",
+      title: "Dari proses pembuatan kami.",
+      intro: "Sekilas suasana bengkel kerja kami: memilih kayu, membentuk, menghaluskan, dan menyelesaikan setiap mainan — sebelum dikirim ke rumahmu.",
+      loading: "Memuat foto…",
+      empty: "Belum ada foto di galeri. Nantikan, ya!",
+    },
     order: {
       button: "Pesan lewat WhatsApp",
       chat: "Chat lewat WhatsApp",
@@ -238,6 +254,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       catalog: "Catalog",
       about: "About",
       contact: "Contact",
+      gallery: "Gallery",
       languageControl: "Choose language",
       openMenu: "Open menu",
       closeMenu: "Close menu",
@@ -338,6 +355,13 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaTitle: (count) => `${count} pieces with their full specifications.`,
       ctaButton: "Open the catalog",
     },
+    gallery: {
+      eyebrow: "Gallery",
+      title: "From our workshop.",
+      intro: "A glimpse of the making process: choosing wood, shaping, sanding, and finishing each toy — before it travels to your home.",
+      loading: "Loading photos…",
+      empty: "No photos in the gallery yet. Stay tuned!",
+    },
     order: {
       button: "Order on WhatsApp",
       chat: "Chat on WhatsApp",
@@ -355,6 +379,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       catalog: "الكتالوج",
       about: "من نحن",
       contact: "اتصل بنا",
+      gallery: "معرض الصور",
       languageControl: "اختر اللغة",
       openMenu: "افتح القائمة",
       closeMenu: "أغلق القائمة",
@@ -453,6 +478,13 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "ما زلت تختار؟",
       ctaTitle: (count) => `${count} قطع بمواصفاتها الكاملة.`,
       ctaButton: "افتح الكتالوج",
+    },
+    gallery: {
+      eyebrow: "معرض الصور",
+      title: "من ورشتنا.",
+      intro: "لمحة من عملية التصنيع: اختيار الخشب والتشكيل والصقل ولمسات أخيرة — قبل أن تصل كل لعبة إلى بيتكم.",
+      loading: "جارٍ تحميل الصور…",
+      empty: "لا توجد صور بعد في المعرض. ترقّبوا الجديد!",
     },
     order: {
       button: "اطلب عبر واتساب",

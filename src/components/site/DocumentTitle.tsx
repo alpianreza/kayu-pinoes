@@ -25,6 +25,8 @@ export function DocumentTitle() {
       document.title = titles.about;
     } else if (pathname === "/contact") {
       document.title = titles.contact;
+    } else if (pathname === "/gallery") {
+      document.title = titles.gallery;
     }
   }, [pathname, language]);
 

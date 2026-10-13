@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FolderTree,
   Grid2X2,
+  Images,
   Layers,
   LogOut,
   Package,
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: Grid2X2 },
   { href: "/admin/products", label: "Produk", icon: Package },
+  { href: "/admin/gallery", label: "Galeri", icon: Images },
   { href: "/admin/categories", label: "Kategori", icon: FolderTree },
   { href: "/admin/master-data", label: "Master Data", icon: Layers },
   { href: "/admin/settings", label: "Pengaturan", icon: Settings },

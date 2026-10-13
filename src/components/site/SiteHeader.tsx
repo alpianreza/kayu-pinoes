@@ -23,6 +23,7 @@ export function SiteHeader({ active }: { active?: string }) {
 
   const nav = [
     { href: "/products", label: copy.catalog },
+    { href: "/gallery", label: copy.gallery },
     { href: "/about", label: copy.about },
     { href: "/contact", label: copy.contact },
   ];

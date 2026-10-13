@@ -49,6 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: "weekly", priority: 1, alternates: { languages: languageAlternates(`${base}/`) } },
     { url: `${base}/products`, changeFrequency: "weekly", priority: 0.9, alternates: { languages: languageAlternates(`${base}/products`) } },
+    { url: `${base}/gallery`, changeFrequency: "weekly", priority: 0.6, alternates: { languages: languageAlternates(`${base}/gallery`) } },
     { url: `${base}/about`, changeFrequency: "monthly", priority: 0.6, alternates: { languages: languageAlternates(`${base}/about`) } },
     { url: `${base}/contact`, changeFrequency: "monthly", priority: 0.6, alternates: { languages: languageAlternates(`${base}/contact`) } },
   ];

@@ -80,6 +80,14 @@ pemasangan sekali jalan (aman dijalankan ulang).
 - Unggahan baru dari panel admin masuk ke Supabase Storage bucket `produk`
   (gambar saja, maksimal 5 MB, lihat `005_storage.sql`).
 
+### Galeri (foto proses pembuatan)
+
+- Halaman publik: `/gallery` — menampilkan foto dari folder `gallery/` di bucket `produk`.
+- Kelola dari panel admin: `/admin/gallery` (unggah beberapa foto sekaligus, hapus).
+- Tidak ada tabel atau migrasi baru; urutan tampil otomatis dari yang terbaru
+  karena nama berkas diawali stempel waktu.
+- Batas berkas sama dengan foto produk: maksimal 5 MB; JPG, PNG, WebP, atau GIF.
+
 ## Struktur singkat
 
 ```

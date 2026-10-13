@@ -10,21 +10,24 @@ import type { Language } from "./catalog-i18n.ts";
  */
 export const pageTitles: Record<
   Language,
-  { catalog: string; about: string; contact: string }
+  { catalog: string; about: string; contact: string; gallery: string }
 > = {
   id: {
     catalog: "Katalog — Kayu Pinoes",
     about: "Tentang — Kayu Pinoes",
     contact: "Kontak & Cara Memesan — Kayu Pinoes",
+    gallery: "Galeri — Kayu Pinoes",
   },
   en: {
     catalog: "Catalog — Kayu Pinoes",
     about: "About — Kayu Pinoes",
     contact: "Contact & how to order — Kayu Pinoes",
+    gallery: "Gallery — Kayu Pinoes",
   },
   ar: {
     catalog: "الكتالوج — Kayu Pinoes",
     about: "من نحن — Kayu Pinoes",
     contact: "الاتصال والطلب — Kayu Pinoes",
+    gallery: "معرض الصور — Kayu Pinoes",
   },
 };
