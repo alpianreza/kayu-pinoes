@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { ExternalLink, MapPin } from "lucide-react";
 
 import { InstagramIcon } from "@/components/site/InstagramIcon";
 
@@ -13,6 +13,15 @@ import { useCatalogue } from "@/components/site/useCatalogue";
 import { languageDirections } from "@/lib/locale-metadata";
 import { Button } from "@/components/ui/button";
 import { siteCopy } from "@/lib/site-copy";
+
+/**
+ * Lokasi bengkel ("Kayu Pinoes Workshop"). Tautan pendek untuk tombol, dan
+ * URL embed resmi untuk peta tersemat (hasil redirect dari
+ * maps.google.com/...&output=embed - tidak butuh kunci API).
+ */
+const LOCATION_LINK = "https://maps.app.goo.gl/FJ8F7pCweG5NErRUA";
+const LOCATION_EMBED_SRC =
+  "https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1s-6.9051572,106.8636613!6i17";
 
 export function ContactView() {
   const { language } = useLanguage();
@@ -60,7 +69,7 @@ export function ContactView() {
 
               {/* Lokasi usaha: membuka Google Maps. */}
               <Button asChild variant="outline" className="mt-3 w-full">
-                <a href="https://maps.app.goo.gl/FJ8F7pCweG5NErRUA" target="_blank" rel="noopener noreferrer">
+                <a href={LOCATION_LINK} target="_blank" rel="noopener noreferrer">
                   <MapPin size={15} /> {copy.locationLabel} · Google Maps
                 </a>
               </Button>
@@ -74,6 +83,33 @@ export function ContactView() {
                 </ul>
               </div>
             </aside>
+          </div>
+        </section>
+
+        {/* Peta lokasi: tersemat supaya pengunjung langsung tahu di mana bengkelnya. */}
+        <section className="mx-auto max-w-7xl px-5 pt-10 sm:px-8 lg:px-10">
+          <div className="overflow-hidden rounded-[2.2rem] border border-[#314B3A]/10 bg-white">
+            <div className="flex flex-col justify-between gap-2 px-6 py-4 sm:flex-row sm:items-center sm:px-7">
+              <p className="font-display text-xl tracking-[-0.04em] text-[#334139]">{copy.locationLabel}</p>
+              <a
+                href={LOCATION_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[#314B3A] transition-colors hover:text-[#C76845]"
+              >
+                <ExternalLink size={14} className="text-[#C76845]" /> Google Maps
+              </a>
+            </div>
+            <div className="relative h-[300px] border-t border-[#314B3A]/10 sm:h-[380px]">
+              <iframe
+                src={LOCATION_EMBED_SRC}
+                title={copy.locationLabel}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+                className="absolute inset-0 size-full border-0"
+              />
+            </div>
           </div>
         </section>
 
