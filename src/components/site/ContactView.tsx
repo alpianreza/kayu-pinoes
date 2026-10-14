@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 
 import { InstagramIcon } from "@/components/site/InstagramIcon";
 
@@ -12,12 +13,10 @@ import { useCatalogue } from "@/components/site/useCatalogue";
 import { languageDirections } from "@/lib/locale-metadata";
 import { Button } from "@/components/ui/button";
 import { siteCopy } from "@/lib/site-copy";
-import { formatWhatsappNumber } from "@/lib/whatsapp";
 
 export function ContactView() {
   const { language } = useLanguage();
   const copy = siteCopy[language].contact;
-  const numberLabel = formatWhatsappNumber();
   // Sama seperti halaman tentang: angka pada ajakan mengikuti katalog aktif.
   const { products } = useCatalogue(language);
 
@@ -51,24 +50,20 @@ export function ContactView() {
 
               <p className="mt-3 text-sm leading-6 text-[#68766D]">{copy.configuredBody}</p>
               <OrderButton className="mt-6 w-full" label={siteCopy[language].order.chat} />
-              {numberLabel ? (
-                <p className="mt-4 text-xs leading-5 text-[#8A948C]">
-                  {copy.destination}: {numberLabel}
-                </p>
-              ) : null}
 
-              {/* Tautan Instagram: kanal kedua setelah WhatsApp. */}
-              <a
-                href="https://instagram.com/kayupinoes"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 flex items-center gap-2.5 text-sm font-bold text-[#314B3A] transition-colors hover:text-[#C76845]"
-              >
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#EEF1E9] text-[#456C4D]">
-                  <InstagramIcon size={15} />
-                </span>
-                Instagram · @kayupinoes
-              </a>
+              {/* Instagram dibuat menonjol: tombol penuh tepat di bawah WhatsApp. */}
+              <Button asChild variant="outline" className="mt-3 w-full">
+                <a href="https://instagram.com/kayupinoes" target="_blank" rel="noopener noreferrer">
+                  <InstagramIcon size={15} /> Instagram · @kayupinoes
+                </a>
+              </Button>
+
+              {/* Lokasi usaha: membuka Google Maps. */}
+              <Button asChild variant="outline" className="mt-3 w-full">
+                <a href="https://maps.app.goo.gl/FJ8F7pCweG5NErRUA" target="_blank" rel="noopener noreferrer">
+                  <MapPin size={15} /> {copy.locationLabel} · Google Maps
+                </a>
+              </Button>
 
               <div className="mt-7 border-t border-[#314B3A]/10 pt-5">
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#748077]">{copy.beforeTitle}</p>

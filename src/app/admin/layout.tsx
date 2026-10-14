@@ -15,7 +15,11 @@ import { AdminSidebar } from "./_components/AdminSidebar";
 import { NotConfiguredScreen } from "./_components/NotConfiguredScreen";
 import { ToastProvider } from "./_components/Toaster";
 
-const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "").trim().toLowerCase();
+/** Daftar email admin - boleh lebih dari satu, dipisahkan koma. */
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 
 function signInErrorMessage(error: { message?: string }): string {
   const raw = (error.message ?? "").toLowerCase();
@@ -40,10 +44,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const isAdmin =
-    Boolean(user) &&
-    ADMIN_EMAIL.length > 0 &&
-    (user?.email ?? "").trim().toLowerCase() === ADMIN_EMAIL;
+  const userEmail = (user?.email ?? "").trim().toLowerCase();
+  const isAdmin = Boolean(user) && ADMIN_EMAILS.includes(userEmail);
 
   useEffect(() => {
     const client = supabaseClient();
@@ -154,9 +156,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             Kamu masuk sebagai <strong>{user.email}</strong>, tetapi email ini tidak terdaftar sebagai admin Kayu Pinoes.
           </p>
           <p className="mt-3 text-sm leading-6 text-[#8A3F23]">
-            {ADMIN_EMAIL.length === 0
+            {ADMIN_EMAILS.length === 0
               ? "Variabel NEXT_PUBLIC_ADMIN_EMAIL belum diisi di .env.local."
-              : `Email admin resmi yang diizinkan: ${ADMIN_EMAIL}`}
+              : `Email admin resmi yang diizinkan: ${ADMIN_EMAILS.join(", ")}`}
           </p>
           <Button className="mt-6" variant="outline" onClick={handleSignOut}>
             <LogOut size={16} /> Keluar

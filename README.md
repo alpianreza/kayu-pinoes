@@ -42,7 +42,7 @@ lalu jalankan ulang server setelah mengubahnya.
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL — Supabase Dashboard → Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key — halaman yang sama |
-| `NEXT_PUBLIC_ADMIN_EMAIL` | Email admin (huruf kecil). Untuk gerbang tampilan; hak akses nyata ada di tabel `admin_users` |
+| `NEXT_PUBLIC_ADMIN_EMAIL` | Email admin (huruf kecil; boleh beberapa, dipisah koma). Untuk gerbang tampilan; hak akses nyata ada di tabel `admin_users` |
 | `NEXT_PUBLIC_SITE_URL` | Alamat publik situs untuk sitemap/robots (mis. `https://kayu-pinoes.netlify.app`) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | Nomor WhatsApp format internasional tanpa `+`, mis. `6289622022910` |
 
@@ -61,17 +61,32 @@ Supabase → SQL Editor:
 | `003_seed_products.sql` | 8 produk bawaan + seluruh relasinya |
 | `004_rls.sql` | RLS + policy semua tabel, fungsi `is_admin()`, RPC `upsert_product` / `delete_product` / `swap_product_order`, trigger admin |
 | `005_storage.sql` | Bucket foto `produk` + policy (publik baca; admin tulis) |
+| `006_product_gallery_rpc.sql` | RPC galeri multi-foto produk |
+| `007_admin_email.sql` | Email admin kedua ikut di-bootstrap otomatis |
 
 `supabase/pasang-awal.sql` adalah gabungan seluruh berkas di atas untuk
 pemasangan sekali jalan (aman dijalankan ulang).
 
 ### Akun admin
 
+Ada dua lapis: gerbang tampilan (`NEXT_PUBLIC_ADMIN_EMAIL`, boleh beberapa
+email dipisahkan koma) dan hak akses nyata (tabel `admin_users` di database).
+
 1. Supabase Dashboard → **Authentication → Users → Add user** — daftarkan
-   email yang sama dengan `NEXT_PUBLIC_ADMIN_EMAIL` beserta kata sandi.
-2. Trigger `bootstrap_admin` (di `004_rls.sql`) otomatis memasukkan email itu
-   ke tabel `admin_users` — tabel itulah sumber kebenaran hak admin.
-3. Masuk ke `/admin` memakai akun tersebut.
+   email admin beserta kata sandi, centang **Auto Confirm User**.
+2. Pastikan email itu ada di `NEXT_PUBLIC_ADMIN_EMAIL` (pisahkan koma bila
+   lebih dari satu), lalu deploy ulang supaya nilainya terbawa saat build.
+3. Tambahkan akun ke `admin_users` supaya boleh menulis ke database
+   (trigger `bootstrap_admin` di `007_admin_email.sql` otomatis menangani
+   email resmi yang terdaftar di situ):
+
+   ```sql
+   insert into public.admin_users (user_id)
+   select id from auth.users where lower(email) = 'email-admin@contoh.com'
+   on conflict (user_id) do nothing;
+   ```
+
+4. Masuk ke `/admin` memakai akun tersebut.
 
 ### Foto produk
 

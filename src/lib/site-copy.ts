@@ -97,6 +97,7 @@ export type SiteCopy = {
     asideTitle: string;
     configuredBody: string;
     destination: string;
+    locationLabel: string;
     beforeTitle: string;
     before: string[];
     ctaEyebrow: string;
@@ -229,6 +230,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "Masih memilih?",
       ctaTitle: (count) => `${count} produk lengkap dengan spesifikasinya.`,
       ctaButton: "Buka katalog",
+      locationLabel: "Lokasi kami",
     },
     gallery: {
       eyebrow: "Galeri",
@@ -354,6 +356,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "Still deciding?",
       ctaTitle: (count) => `${count} pieces with their full specifications.`,
       ctaButton: "Open the catalog",
+      locationLabel: "Our location",
     },
     gallery: {
       eyebrow: "Gallery",
@@ -478,6 +481,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "ما زلت تختار؟",
       ctaTitle: (count) => `${count} قطع بمواصفاتها الكاملة.`,
       ctaButton: "افتح الكتالوج",
+      locationLabel: "موقعنا",
     },
     gallery: {
       eyebrow: "معرض الصور",
