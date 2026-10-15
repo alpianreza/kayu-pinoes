@@ -10,7 +10,8 @@ import { toMessage } from "@/lib/product-form";
 import {
   MAX_PRODUCT_IMAGE_BYTES,
   deleteGalleryPhoto,
-  fetchGalleryPhotos,
+  fetchAdminGalleryPhotos,
+  updateGalleryCaption,
   uploadGalleryPhoto,
   type GalleryPhoto,
 } from "@/lib/supabase-gallery";
@@ -21,12 +22,19 @@ import { useToast } from "../_components/Toaster";
 
 const MAX_PHOTO_MB = Math.round(MAX_PRODUCT_IMAGE_BYTES / (1024 * 1024));
 
+/** Pesan ramah bila tabel galeri belum terpasang (migrasi 008 belum dijalankan). */
+function ramahkanListError(message: string): string {
+  if (/gallery_photos|does not exist|42P01/i.test(message)) {
+    return "Tabel galeri belum terpasang. Jalankan berkas supabase/migrations/008_gallery_photos.sql di Supabase → SQL Editor, lalu muat ulang halaman ini.";
+  }
+  return message;
+}
+
 /**
- * Panel admin galeri: unggah & hapus foto proses pembuatan.
+ * Panel admin galeri: unggah foto, tulis keterangan per foto, hapus.
  *
- * Foto disimpan di bucket "produk" folder `gallery/` - urutan tampil
- * mengikuti nama berkas (diawali stempel waktu), jadi yang terbaru selalu
- * di depan tanpa pengaturan tambahan.
+ * Foto disimpan di bucket "produk" folder `gallery/`; keterangan dan
+ * urutan tampilnya (terbaru di depan) disimpan di tabel `gallery_photos`.
  */
 export default function AdminGalleryPage() {
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
@@ -35,16 +43,18 @@ export default function AdminGalleryPage() {
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<GalleryPhoto | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [captionDrafts, setCaptionDrafts] = useState<Record<number, string>>({});
+  const [savingCaptionId, setSavingCaptionId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { showToast } = useToast();
 
   const reload = useCallback(async () => {
     try {
-      const next = await fetchGalleryPhotos();
+      const next = await fetchAdminGalleryPhotos();
       setPhotos(next);
       setListError(null);
     } catch (error) {
-      setListError(toMessage(error));
+      setListError(ramahkanListError(toMessage(error)));
     } finally {
       setLoaded(true);
     }
@@ -55,7 +65,7 @@ export default function AdminGalleryPage() {
   useEffect(() => {
     let active = true;
 
-    fetchGalleryPhotos()
+    fetchAdminGalleryPhotos()
       .then((next) => {
         if (active) {
           setPhotos(next);
@@ -63,7 +73,7 @@ export default function AdminGalleryPage() {
         }
       })
       .catch((error) => {
-        if (active) setListError(toMessage(error));
+        if (active) setListError(ramahkanListError(toMessage(error)));
       })
       .finally(() => {
         if (active) setLoaded(true);
@@ -73,6 +83,14 @@ export default function AdminGalleryPage() {
       active = false;
     };
   }, []);
+
+  function captionValue(photo: GalleryPhoto): string {
+    return captionDrafts[photo.id] ?? photo.caption;
+  }
+
+  function captionChanged(photo: GalleryPhoto): boolean {
+    return captionValue(photo).trim() !== photo.caption;
+  }
 
   async function handleFilesChosen(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -103,12 +121,31 @@ export default function AdminGalleryPage() {
     await reload();
   }
 
+  async function handleCaptionSave(photo: GalleryPhoto) {
+    const value = captionValue(photo).trim();
+    setSavingCaptionId(photo.id);
+    try {
+      await updateGalleryCaption(photo.id, value);
+      showToast("success", "Keterangan disimpan.");
+      setCaptionDrafts((prev) => {
+        const next = { ...prev };
+        delete next[photo.id];
+        return next;
+      });
+      await reload();
+    } catch (error) {
+      showToast("error", toMessage(error));
+    } finally {
+      setSavingCaptionId(null);
+    }
+  }
+
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
 
     setDeleting(true);
     try {
-      await deleteGalleryPhoto(deleteTarget.path);
+      await deleteGalleryPhoto(deleteTarget);
       showToast("success", "Foto dihapus dari galeri.");
       setDeleteTarget(null);
       await reload();
@@ -128,7 +165,7 @@ export default function AdminGalleryPage() {
             Foto Proses Pembuatan
           </h1>
           <p className="mt-1 text-sm text-[#6B766E]">
-            Kumpulan foto bengkel dan proses pembuatan — tampil di halaman Galeri situs.
+            Kumpulan foto bengkel dan proses pembuatan — tampil di halaman Galeri situs. Keterangan bisa ditulis per foto.
           </p>
         </div>
 
@@ -153,7 +190,7 @@ export default function AdminGalleryPage() {
       </div>
 
       <p className="text-xs text-[#8A948C]">
-        Foto terbaru tampil lebih dulu. Maksimal {MAX_PHOTO_MB} MB per foto (JPG, PNG, WebP, atau GIF).
+        Foto terbaru tampil lebih dulu. Maksimal {MAX_PHOTO_MB} MB per foto (JPG, PNG, WebP, atau GIF). Klik foto pada pratinjau untuk melihat modal beserta keterangannya seperti di situs.
       </p>
 
       {listError ? <Notice kind="error">{listError}</Notice> : null}
@@ -174,20 +211,40 @@ export default function AdminGalleryPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {photos.map((photo) => (
             <figure
-              key={photo.path}
-              className="group relative overflow-hidden rounded-[1.25rem] border border-[#314B3A]/10 bg-white"
+              key={photo.id}
+              className="overflow-hidden rounded-[1.25rem] border border-[#314B3A]/10 bg-white"
             >
               <div className="relative aspect-square">
                 <ProductImage src={photo.imageUrl} alt="" sizes="(max-width: 640px) 50vw, 25vw" />
+                <button
+                  type="button"
+                  aria-label="Hapus foto"
+                  onClick={() => setDeleteTarget(photo)}
+                  className="absolute end-2.5 top-2.5 grid size-9 place-items-center rounded-full bg-[#1B241E]/70 text-white backdrop-blur-sm transition-colors hover:bg-[#C76845]"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
-              <button
-                type="button"
-                aria-label="Hapus foto"
-                onClick={() => setDeleteTarget(photo)}
-                className="absolute end-2.5 top-2.5 grid size-9 place-items-center rounded-full bg-[#1B241E]/70 text-white backdrop-blur-sm transition-colors hover:bg-[#C76845]"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="space-y-2 p-3">
+                <input
+                  type="text"
+                  value={captionValue(photo)}
+                  onChange={(event) =>
+                    setCaptionDrafts((prev) => ({ ...prev, [photo.id]: event.target.value }))
+                  }
+                  placeholder="Keterangan foto…"
+                  className="w-full rounded-xl border border-[#314B3A]/15 bg-[#FBF9F3] px-3 py-2 text-xs font-semibold text-[#27372D] outline-none transition focus:border-[#C76845]/60"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full"
+                  disabled={!captionChanged(photo) || savingCaptionId === photo.id}
+                  onClick={() => void handleCaptionSave(photo)}
+                >
+                  {savingCaptionId === photo.id ? "Menyimpan…" : "Simpan keterangan"}
+                </Button>
+              </div>
             </figure>
           ))}
         </div>
@@ -196,7 +253,7 @@ export default function AdminGalleryPage() {
       <ConfirmModal
         isOpen={deleteTarget !== null}
         title="Hapus foto ini?"
-        description="Foto akan dihapus permanen dari galeri dan tidak bisa dikembalikan."
+        description="Foto beserta keterangannya akan dihapus permanen dari galeri dan tidak bisa dikembalikan."
         confirmLabel={deleting ? "Menghapus…" : "Ya, hapus"}
         onConfirm={() => void handleConfirmDelete()}
         onCancel={() => setDeleteTarget(null)}

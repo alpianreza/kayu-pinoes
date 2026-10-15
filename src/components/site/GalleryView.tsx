@@ -3,6 +3,7 @@
 import { Camera } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { GalleryLightbox } from "@/components/site/GalleryLightbox";
 import { ProductImage } from "@/components/site/ProductImage";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -14,13 +15,14 @@ import { fetchGalleryPhotos, type GalleryPhoto } from "@/lib/supabase-gallery";
 /**
  * Halaman galeri publik: kumpulan foto proses pembuatan.
  *
- * Foto dibaca langsung dari folder `gallery/` di bucket "produk" milik
- * server data, jadi tidak ada daftar terpisah yang harus dijaga admin.
+ * Foto + keterangannya dibaca dari tabel `gallery_photos` milik server data;
+ * klik foto untuk membuka modal besar dengan navigasi sebelumnya/berikutnya.
  */
 export function GalleryView() {
   const { language } = useLanguage();
   const copy = siteCopy[language].gallery;
   const [photos, setPhotos] = useState<GalleryPhoto[] | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -66,20 +68,26 @@ export function GalleryView() {
           ) : (
             <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
               {photos.map((photo, index) => (
-                <a
+                <button
                   key={photo.path}
-                  href={photo.imageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative block aspect-square overflow-hidden rounded-[1.25rem] border border-[#314B3A]/10 bg-[#E8EBDD] sm:rounded-[1.7rem]"
+                  type="button"
+                  onClick={() => setOpenIndex(index)}
+                  className="group text-start"
                 >
-                  <ProductImage
-                    src={photo.imageUrl}
-                    alt={`${copy.eyebrow} ${index + 1}`}
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                  />
-                </a>
+                  <span className="relative block aspect-square overflow-hidden rounded-[1.25rem] border border-[#314B3A]/10 bg-[#E8EBDD] sm:rounded-[1.7rem]">
+                    <ProductImage
+                      src={photo.imageUrl}
+                      alt={photo.caption || `${copy.eyebrow} ${index + 1}`}
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                    />
+                  </span>
+                  {photo.caption ? (
+                    <span className="mt-2 block line-clamp-2 text-xs font-semibold leading-5 text-[#536459]">
+                      {photo.caption}
+                    </span>
+                  ) : null}
+                </button>
               ))}
             </div>
           )}
@@ -87,6 +95,15 @@ export function GalleryView() {
       </main>
 
       <SiteFooter />
+
+      {openIndex !== null && photos !== null ? (
+        <GalleryLightbox
+          photos={photos}
+          index={openIndex}
+          onClose={() => setOpenIndex(null)}
+          onIndexChange={setOpenIndex}
+        />
+      ) : null}
     </div>
   );
 }

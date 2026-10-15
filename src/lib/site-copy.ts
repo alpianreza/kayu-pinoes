@@ -111,6 +111,9 @@ export type SiteCopy = {
     intro: string;
     loading: string;
     empty: string;
+    close: string;
+    prev: string;
+    next: string;
   };
   order: {
     button: string;
@@ -238,6 +241,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       intro: "Sekilas suasana bengkel kerja kami: memilih kayu, membentuk, menghaluskan, dan menyelesaikan setiap mainan — sebelum dikirim ke rumahmu.",
       loading: "Memuat foto…",
       empty: "Belum ada foto di galeri. Nantikan, ya!",
+      close: "Tutup",
+      prev: "Foto sebelumnya",
+      next: "Foto berikutnya",
     },
     order: {
       button: "Pesan lewat WhatsApp",
@@ -364,6 +370,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       intro: "A glimpse of the making process: choosing wood, shaping, sanding, and finishing each toy — before it travels to your home.",
       loading: "Loading photos…",
       empty: "No photos in the gallery yet. Stay tuned!",
+      close: "Close",
+      prev: "Previous photo",
+      next: "Next photo",
     },
     order: {
       button: "Order on WhatsApp",
@@ -489,6 +498,9 @@ export const siteCopy: Record<Language, SiteCopy> = {
       intro: "لمحة من عملية التصنيع: اختيار الخشب والتشكيل والصقل ولمسات أخيرة — قبل أن تصل كل لعبة إلى بيتكم.",
       loading: "جارٍ تحميل الصور…",
       empty: "لا توجد صور بعد في المعرض. ترقّبوا الجديد!",
+      close: "إغلاق",
+      prev: "الصورة السابقة",
+      next: "الصورة التالية",
     },
     order: {
       button: "اطلب عبر واتساب",

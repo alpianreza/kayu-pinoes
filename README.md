@@ -63,6 +63,7 @@ Supabase → SQL Editor:
 | `005_storage.sql` | Bucket foto `produk` + policy (publik baca; admin tulis) |
 | `006_product_gallery_rpc.sql` | RPC galeri multi-foto produk |
 | `007_admin_email.sql` | Email admin kedua ikut di-bootstrap otomatis |
+| `008_gallery_photos.sql` | Tabel galeri foto proses (keterangan) + RLS + backfill foto lama |
 
 `supabase/pasang-awal.sql` adalah gabungan seluruh berkas di atas untuk
 pemasangan sekali jalan (aman dijalankan ulang).
@@ -97,11 +98,15 @@ email dipisahkan koma) dan hak akses nyata (tabel `admin_users` di database).
 
 ### Galeri (foto proses pembuatan)
 
-- Halaman publik: `/gallery` — menampilkan foto dari folder `gallery/` di bucket `produk`.
-- Kelola dari panel admin: `/admin/gallery` (unggah beberapa foto sekaligus, hapus).
-- Tidak ada tabel atau migrasi baru; urutan tampil otomatis dari yang terbaru
-  karena nama berkas diawali stempel waktu.
-- Batas berkas sama dengan foto produk: maksimal 5 MB; JPG, PNG, WebP, atau GIF.
+- Halaman publik: `/gallery` — menampilkan foto + keterangan dari tabel
+  `gallery_photos` (foto terbaru di depan). Klik foto untuk membuka modal
+  besar dengan navigasi foto sebelumnya/berikutnya.
+- Kelola dari panel admin: `/admin/gallery` — unggah beberapa foto sekaligus,
+  tulis keterangan per foto, hapus.
+- Foto disimpan di bucket `produk` folder `gallery/`; datanya di tabel
+  `gallery_photos` — jalankan `008_gallery_photos.sql` sekali di SQL Editor
+  (foto lama di folder itu didaftarkan ulang otomatis).
+- Batas berkas sama dengan foto produk: maksimal 5 MB; JPG, PNG, WebP, GIF.
 
 ## Struktur singkat
 
