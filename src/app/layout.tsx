@@ -8,6 +8,8 @@ import { DocumentTitle } from "@/components/site/DocumentTitle";
 import { LanguageProvider } from "@/components/site/LanguageProvider";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageDirections, languageMetadata } from "@/lib/locale-metadata";
+import { organizationJsonLd } from "@/lib/seo";
+import { whatsappNumber } from "@/lib/whatsapp";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/$/, "");
 
@@ -65,24 +67,11 @@ export const metadata: Metadata = {
     // kalau DEFAULT_LANGUAGE berubah, metadata ini ikut.
     locale: languageMetadata[DEFAULT_LANGUAGE].ogLocale,
     siteName: "Kayu Pinoes",
-    ...(siteUrl
-      ? {
-          images: [
-            {
-              url: "/images/pinoes-hero-toys.png",
-              width: 1024,
-              height: 1024,
-              alt: "Susunan mainan kayu Kayu Pinoes",
-            },
-          ],
-        }
-      : {}),
   },
   twitter: {
     card: "summary_large_image",
     title: "Kayu Pinoes — Mainan kayu untuk tumbuh bersama",
     description: "Galeri mainan kayu Kayu Pinoes yang dibuat untuk tangan kecil dan imajinasi besar.",
-    ...(siteUrl ? { images: ["/images/pinoes-hero-toys.png"] } : {}),
   },
 };
 
@@ -99,6 +88,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       className={`${displayFont.variable} ${bodyFont.variable} ${arabicFont.variable}`}
     >
       <body>
+        {/* Data terstruktur organisasi (schema.org) untuk mesin pencari -
+            memakai alamat situs dan nomor WhatsApp yang benar-benar aktif. */}
+        {siteUrl ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(
+                organizationJsonLd({ siteUrl, whatsappNumber }),
+              ),
+            }}
+          />
+        ) : null}
         {/* NuqsAdapter menghubungkan hook nuqs ke router Next.js; dipakai
             CatalogView untuk menyimpan filter katalog di URL. */}
         <NuqsAdapter>

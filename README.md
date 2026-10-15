@@ -108,6 +108,25 @@ email dipisahkan koma) dan hak akses nyata (tabel `admin_users` di database).
   (foto lama di folder itu didaftarkan ulang otomatis).
 - Batas berkas sama dengan foto produk: maksimal 5 MB; JPG, PNG, WebP, GIF.
 
+## SEO
+
+Sudah terpasang di kode:
+
+- Judul, deskripsi, canonical, dan hreflang tiga bahasa di semua halaman.
+- `sitemap.xml` dinamis dari CMS + `robots.txt` (panel admin & API tertutup).
+- Open Graph & Twitter Card — gambar bawaan 1200×630 di `src/app/opengraph-image.png`.
+- Data terstruktur schema.org: Organization (semua halaman), Product &
+  BreadcrumbList (halaman detail produk).
+
+Langkah pemilik di luar kode:
+
+1. **Google Search Console** — daftarkan situs, verifikasi kepemilikan (TXT
+   lewat Netlify DNS atau meta tag), lalu kirim `sitemap.xml`.
+2. **Google Business Profile** — daftarkan lokasi bengkel (foto, jam buka,
+   tautan situs) supaya muncul di pencarian & Maps lokal.
+3. Isi keterangan foto galeri dan deskripsi produk dengan teks asli.
+4. Kumpulkan tautan masuk dan ulasan (Instagram, mitra, pembeli).
+
 ## Struktur singkat
 
 ```

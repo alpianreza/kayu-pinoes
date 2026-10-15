@@ -7,6 +7,7 @@ import { getPublishedProducts } from "@/lib/supabase-products";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates } from "@/lib/locale-metadata";
 import { staticProductSlug, type Product } from "@/lib/products";
+import { breadcrumbJsonLd, normalizeBaseUrl, productJsonLd } from "@/lib/seo";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 // Semua halaman detail dirender saat diminta (bukan sekali saat build), supaya
@@ -87,5 +88,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await findProduct(slug);
   if (!/^\d+$/.test(slug) && !product) notFound();
 
-  return <ProductDetailView slug={slug} initialProduct={product} />;
+  // Data terstruktur (schema.org) untuk mesin pencari: produk + remah roti.
+  const base = normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL);
+  const structuredData =
+    product && base
+      ? [
+          productJsonLd(product, base),
+          breadcrumbJsonLd([
+            { name: "Home", url: `${base}/` },
+            { name: "Catalog", url: `${base}/products` },
+            { name: product.name, url: `${base}/products/${product.slug}` },
+          ]),
+        ]
+      : [];
+
+  return (
+    <>
+      {structuredData.map((data, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+        />
+      ))}
+      <ProductDetailView slug={slug} initialProduct={product} />
+    </>
+  );
 }
