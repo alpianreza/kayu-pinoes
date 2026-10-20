@@ -5,18 +5,19 @@ import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates, languageMetadata } from "@/lib/locale-metadata";
 
 export const metadata: Metadata = {
-  title: "Gallery — Kayu Pinoes",
+  title: "Galeri: Proses Pembuatan Mainan Kayu",
   description:
-    "A look into our workshop: how each Kayu Pinoes wooden toy is made — choosing wood, shaping, sanding, and finishing.",
+    "Intip bengkel Kayu Pinoes: memilih kayu pinus, membentuk, mengampelas, dan menyelesaikan setiap mainan kayu edukatif.",
   alternates: {
     canonical: "/gallery",
     languages: languageAlternates("/gallery"),
   },
   openGraph: {
     url: "/gallery",
-    title: "Gallery — Kayu Pinoes",
+    title: "Galeri: Proses Pembuatan Mainan Kayu — Kayu Pinoes",
     description:
-      "A look into our workshop: how each Kayu Pinoes wooden toy is made — choosing wood, shaping, sanding, and finishing.",
+      "Intip bengkel Kayu Pinoes: memilih kayu pinus, membentuk, mengampelas, dan menyelesaikan setiap mainan kayu edukatif.",
+    siteName: "Kayu Pinoes",
     locale: languageMetadata[DEFAULT_LANGUAGE].ogLocale,
   },
 };

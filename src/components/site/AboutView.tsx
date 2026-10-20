@@ -78,6 +78,30 @@ export function AboutView() {
         </section>
 
         <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10">
+          <div className="border-t border-[#314B3A]/10 pt-10">
+            <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#C76845]">
+              {copy.faq.eyebrow}
+            </p>
+            <h2 className="font-display max-w-2xl text-3xl leading-[1.05] tracking-[-0.05em] text-[#294332] sm:text-4xl">
+              {copy.faq.title}
+            </h2>
+            <div className="mt-8 max-w-3xl divide-y divide-[#314B3A]/10">
+              {copy.faq.items.map((item) => (
+                <details key={item.q} className="group py-5">
+                  <summary className="font-display flex cursor-pointer list-none items-center justify-between gap-4 text-lg tracking-[-0.03em] text-[#334139] [&::-webkit-details-marker]:hidden">
+                    {item.q}
+                    <span className="shrink-0 text-2xl leading-none text-[#C76845] transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-3 text-sm leading-6 text-[#68766D]">{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10">
           <div className="flex flex-col justify-between gap-6 rounded-[2.2rem] bg-[#314B3A] px-7 py-10 text-[#F9F4E8] sm:flex-row sm:items-end sm:px-10">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-[#F4C45D]">{copy.ctaEyebrow}</p>

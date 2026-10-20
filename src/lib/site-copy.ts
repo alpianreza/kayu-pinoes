@@ -88,6 +88,15 @@ export type SiteCopy = {
     /** Menerima jumlah produk yang sedang tampil di katalog. */
     ctaTitle: (productCount: number) => string;
     ctaButton: string;
+    /**
+     * Tanya-jawab singkat di bagian bawah halaman. Teks yang sama dipakai
+     * sebagai data terstruktur FAQPage, jadi cukup satu sumber.
+     */
+    faq: {
+      eyebrow: string;
+      title: string;
+      items: Array<{ q: string; a: string }>;
+    };
   };
   contact: {
     eyebrow: string;
@@ -143,7 +152,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       eyebrow: "Katalog lengkap",
       title: "Semua mainan kayu, dalam satu halaman.",
       intro:
-        "Semua yang perlu kamu tahu ada di sini — bahan, ukuran, dan isi set setiap produk. Untuk harga dan ketersediaan, tinggal tanya lewat WhatsApp.",
+        "Semua mainan kayu edukatif kami ada di sini — bahan, ukuran, dan isi set setiap produk. Untuk harga dan ketersediaan, tinggal tanya lewat WhatsApp.",
       searchLabel: "Cari produk",
       searchPlaceholder: "Mis. pelangi, balok, puzzle",
       categoryLabel: "Kategori",
@@ -198,7 +207,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       eyebrow: "Tentang kami",
       title: "Tidak sekadar indah dilihat.",
       intro:
-        "Kami memilih bentuk yang tidak cepat membuat bosan, warna yang lembut, dan kayu yang nyaman digenggam. Mainan kayu yang mengundang anak untuk menyentuh, membangun, dan menemukan cerita mereka sendiri.",
+        "Kami memilih bentuk yang tidak cepat membuat bosan, warna yang lembut, dan kayu pinus yang nyaman digenggam. Mainan kayu edukatif yang mengundang anak untuk menyentuh, membangun, dan menemukan cerita mereka sendiri.",
       processEyebrow: "Dari bahan, jadi kenangan",
       processTitle: "Empat langkah, dan tidak ada yang terburu-buru.",
       process: [
@@ -215,6 +224,32 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "Lihat sendiri",
       ctaTitle: (count) => `${count} produk, lengkap dengan ukurannya.`,
       ctaButton: "Buka katalog",
+      faq: {
+        eyebrow: "Tanya jawab",
+        title: "Hal yang sering ditanyakan.",
+        items: [
+          {
+            q: "Apa itu mainan kayu edukatif?",
+            a: "Mainan kayu edukatif adalah mainan dari kayu yang dirancang untuk melatih keterampilan anak sambil bermain — motorik halus, koordinasi mata dan tangan, serta pengenalan bentuk, warna, dan angka. Kayu Pinoes membuatnya dengan bentuk sederhana supaya anak bebas bereksplorasi.",
+          },
+          {
+            q: "Kenapa Kayu Pinoes memakai kayu pinus?",
+            a: "Kayu pinus ringan, seratnya rapi, dan nyaman digenggam tangan kecil. Bahannya juga cukup kuat untuk dimainkan setiap hari, serta mudah dibentuk menjadi lengkung dan balok yang halus.",
+          },
+          {
+            q: "Apakah mainan kayu aman untuk anak?",
+            a: "Ya. Setiap sudut diampelas halus dan finishing-nya memakai cat berbasis air. Kami tetap menyarankan pendampingan orang dewasa, terutama untuk anak di bawah tiga tahun.",
+          },
+          {
+            q: "Bisa custom nama, ukuran, atau desain?",
+            a: "Bisa. Kami menerima permintaan ukuran lain, warna lain, set hadiah, sampai mainan yang dirancang dari nol. Ceritakan idemu lewat WhatsApp dan kami balas dengan kemungkinannya.",
+          },
+          {
+            q: "Bisa kirim ke seluruh Indonesia atau pesan grosir?",
+            a: "Bisa. Pesanan dikirim dari bengkel kami di Indonesia, dan kami melayani pesanan partai besar maupun grosir. Ongkos kirim menyesuaikan alamat tujuan.",
+          },
+        ],
+      },
     },
     contact: {
       eyebrow: "Kontak",
@@ -251,7 +286,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       contactUs: "Hubungi Kami",
     },
     footer: {
-      description: "Galeri mainan kayu kecil untuk hari-hari yang penuh kemungkinan.",
+      description: "Mainan kayu edukatif dari kayu pinus pilihan, dibentuk dan dihaluskan dengan tangan di Indonesia.",
       copyright: "© 2026 Kayu Pinoes. Dibuat untuk bermain dengan pelan.",
     },
   },
@@ -272,7 +307,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       eyebrow: "Full catalog",
       title: "Every wooden toy, on one page.",
       intro:
-        "Everything worth knowing is here — material, dimensions, and what comes in each set. For price and availability, just ask on WhatsApp.",
+        "Every educational wooden toy we make lives here — material, dimensions, and what comes in each set. For price and availability, just ask on WhatsApp.",
       searchLabel: "Search",
       searchPlaceholder: "e.g. rainbow, blocks, puzzle",
       categoryLabel: "Category",
@@ -327,7 +362,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       eyebrow: "About us",
       title: "More than lovely to look at.",
       intro:
-        "We choose shapes that stay interesting, gentle colours, and wood that feels good to hold. Wooden toys that invite children to touch, build, and discover stories of their own.",
+        "We choose shapes that stay interesting, gentle colours, and pine wood that feels good to hold. Educational wooden toys that invite children to touch, build, and discover stories of their own.",
       processEyebrow: "From material to memory",
       processTitle: "Four steps, and nothing rushed.",
       process: [
@@ -344,6 +379,32 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "See for yourself",
       ctaTitle: (count) => `${count} pieces, dimensions and all.`,
       ctaButton: "Open the catalog",
+      faq: {
+        eyebrow: "Questions",
+        title: "Things people often ask.",
+        items: [
+          {
+            q: "What are educational wooden toys?",
+            a: "Educational wooden toys are wooden playthings designed to build skills through play — fine motor control, hand-eye coordination, and early shape, colour, and number recognition. Kayu Pinoes keeps the forms simple so children are free to explore.",
+          },
+          {
+            q: "Why does Kayu Pinoes use pine wood?",
+            a: "Pine is light, has a clean grain, and feels comfortable in small hands. It is also strong enough for daily play and easy to shape into smooth arches and blocks.",
+          },
+          {
+            q: "Are wooden toys safe for children?",
+            a: "Yes. Every edge is sanded smooth and the finish uses water-based paint. We still recommend adult supervision, especially for children under three.",
+          },
+          {
+            q: "Can I customise the name, size, or design?",
+            a: "Yes. We take requests for another size, another colour, a gift set, or a toy designed from scratch. Describe your idea on WhatsApp and we will reply with what is possible.",
+          },
+          {
+            q: "Do you ship across Indonesia or take wholesale orders?",
+            a: "Yes. Orders ship from our workshop in Indonesia, and we handle large and wholesale orders. Shipping cost follows the destination.",
+          },
+        ],
+      },
     },
     contact: {
       eyebrow: "Contact",
@@ -380,7 +441,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       contactUs: "Contact us",
     },
     footer: {
-      description: "A small wooden-toy gallery for days full of possibility.",
+      description: "Educational wooden toys made from selected pine wood, shaped and sanded by hand in Indonesia.",
       copyright: "© 2026 Kayu Pinoes. Made for unhurried play.",
     },
   },
@@ -400,7 +461,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
     catalog: {
       eyebrow: "الكتالوج الكامل",
       title: "كل الألعاب الخشبية في صفحة واحدة.",
-      intro: "كل ما يهمّ موجود هنا — المادة والمقاسات ومحتويات كل طقم. للسعر والتوفر، اسألنا عبر واتساب.",
+      intro: "كل ألعابنا الخشبية التعليمية هنا — المادة والمقاسات ومحتويات كل طقم. للسعر والتوفر، اسألنا عبر واتساب.",
       searchLabel: "ابحث",
       searchPlaceholder: "مثال: قوس قزح، مكعبات، أحجية",
       categoryLabel: "الفئة",
@@ -455,7 +516,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       eyebrow: "من نحن",
       title: "أكثر من مجرد جمالٍ للنظر.",
       intro:
-        "نختار أشكالاً لا تفقد بريقها سريعاً، وألواناً هادئة، وخشباً مريحاً في الإمساك. ألعاب خشبية تدعو الأطفال إلى اللمس والبناء واكتشاف حكاياتهم الخاصة.",
+        "نختار أشكالاً لا تفقد بريقها سريعاً، وألواناً هادئة، وخشب صنوبر مريحاً في الإمساك. ألعاب خشبية تعليمية تدعو الأطفال إلى اللمس والبناء واكتشاف حكاياتهم الخاصة.",
       processEyebrow: "من المادة إلى الذكرى",
       processTitle: "أربع خطوات، دون عجلة.",
       process: [
@@ -472,6 +533,32 @@ export const siteCopy: Record<Language, SiteCopy> = {
       ctaEyebrow: "شاهد بنفسك",
       ctaTitle: (count) => `${count} قطع بمقاساتها الكاملة.`,
       ctaButton: "افتح الكتالوج",
+      faq: {
+        eyebrow: "أسئلة وأجوبة",
+        title: "أمور يسأل عنها الناس كثيراً.",
+        items: [
+          {
+            q: "ما هي الألعاب الخشبية التعليمية؟",
+            a: "الألعاب الخشبية التعليمية هي ألعاب مصنوعة من الخشب، مصممة لتنمية مهارات الطفل أثناء اللعب — المهارات الحركية الدقيقة، والتنسيق بين العين واليد، والتعرف على الأشكال والألوان والأرقام. تصنع كايو بينويس أشكالاً بسيطة ليبقى الطفل حراً في الاستكشاف.",
+          },
+          {
+            q: "لماذا تستخدم كايو بينويس خشب الصنوبر؟",
+            a: "خشب الصنوبر خفيف، وعروقه منتظمة، ومريح في يد الطفل الصغيرة. وهو أيضاً متين بما يكفي للعب اليومي، ويسهل تشكيله إلى أقواس ومكعبات ناعمة.",
+          },
+          {
+            q: "هل الألعاب الخشبية آمنة للأطفال؟",
+            a: "نعم. كل زاوية مصقولة بسلاسة والطلاء مائي الأساس. ومع ذلك ننصح بإشراف شخص بالغ، خصوصاً للأطفال دون الثالثة.",
+          },
+          {
+            q: "هل يمكن تخصيص الاسم أو المقاس أو التصميم؟",
+            a: "نعم. نستقبل طلبات بمقاس آخر أو لون آخر أو طقم هدايا أو لعبة تُصمم من الصفر. اشرح فكرتك عبر واتساب وسنرد بما هو ممكن.",
+          },
+          {
+            q: "هل تشحنون إلى جميع أنحاء إندونيسيا أو تستقبلون طلبات الجملة؟",
+            a: "نعم. تُشحن الطلبات من ورشتنا في إندونيسيا، ونستقبل الطلبات الكبيرة وطلبات الجملة. تُحدَّد تكلفة الشحن حسب العنوان.",
+          },
+        ],
+      },
     },
     contact: {
       eyebrow: "اتصل بنا",
@@ -508,7 +595,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       contactUs: "اتصل بنا",
     },
     footer: {
-      description: "معرض صغير للألعاب الخشبية لأيام مليئة بالاحتمالات.",
+      description: "ألعاب خشبية تعليمية من خشب صنوبر مختار، تُشكَّل وتُصقَل يدوياً في إندونيسيا.",
       copyright: "© 2026 كايو بينويس. صُنعت للعب على مهل.",
     },
   },

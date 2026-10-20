@@ -10,6 +10,19 @@ import type { Product } from "./products.ts";
 
 export const SITE_NAME = "Kayu Pinoes";
 
+/** Judul dan deskripsi bawaan seluruh situs, dipakai layout dan beranda. */
+export const SITE_TITLE = "Kayu Pinoes — Mainan Kayu Edukatif dari Kayu Pinus";
+export const SITE_DESCRIPTION =
+  "Kayu Pinoes membuat mainan kayu edukatif handmade dari kayu pinus pilihan — aman untuk tangan kecil, tahan lama, dan bisa custom. Kirim ke seluruh Indonesia.";
+/** Kata kunci utama situs. */
+export const SITE_KEYWORDS: string[] = [
+  "mainan kayu edukatif",
+  "mainan kayu pinus",
+  "mainan kayu",
+  "mainan anak dari kayu",
+  "wooden educational toys",
+];
+
 /** Alamat dasar situs: tanpa spasi, tanpa garis miring di akhir. */
 export function normalizeBaseUrl(siteUrl: string | null | undefined): string {
   return (siteUrl ?? "").trim().replace(/\/+$/, "");
@@ -45,7 +58,8 @@ export function organizationJsonLd(options: {
     url: `${siteUrl}/`,
     logo: `${siteUrl}/images/brand/logo-mark.png`,
     description:
-      "Handmade wooden toys for growing together — made in Indonesia.",
+      "Mainan kayu edukatif handmade dari kayu pinus, dibuat di Indonesia.",
+    areaServed: "ID",
     sameAs: [instagramUrl],
     ...(whatsappNumber
       ? {
@@ -92,6 +106,28 @@ export function breadcrumbJsonLd(entries: BreadcrumbEntry[]) {
       position: index + 1,
       name: entry.name,
       item: entry.url,
+    })),
+  };
+}
+export type FaqItem = { q: string; a: string };
+
+/**
+ * Tanya-jawab (schema.org/FAQPage).
+ *
+ * Teksnya berasal dari sumber yang sama dengan yang tampil di halaman, jadi
+ * tidak ada dua versi jawaban yang bisa menyimpang.
+ */
+export function faqJsonLd(items: FaqItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a,
+      },
     })),
   };
 }

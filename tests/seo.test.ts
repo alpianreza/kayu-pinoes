@@ -5,6 +5,7 @@ import type { Product } from "../src/lib/products.ts";
 import {
   absoluteImageUrl,
   breadcrumbJsonLd,
+  faqJsonLd,
   normalizeBaseUrl,
   organizationJsonLd,
   productJsonLd,
@@ -85,4 +86,23 @@ test("breadcrumbJsonLd memberi posisi berurutan", () => {
   assert.equal(data.itemListElement.length, 3);
   assert.equal(data.itemListElement[0].position, 1);
   assert.equal(data.itemListElement[2].name, "Contoh Produk");
+});
+test("faqJsonLd membentuk FAQPage dari daftar tanya-jawab", () => {
+  const data = faqJsonLd([
+    { q: "Apa itu mainan kayu edukatif?", a: "Mainan dari kayu untuk belajar sambil bermain." },
+    { q: "Kenapa kayu pinus?", a: "Ringan dan nyaman digenggam." },
+  ]);
+
+  assert.equal(data["@type"], "FAQPage");
+  assert.equal(data.mainEntity.length, 2);
+  assert.equal(data.mainEntity[0]["@type"], "Question");
+  assert.equal(data.mainEntity[0].name, "Apa itu mainan kayu edukatif?");
+  assert.equal(data.mainEntity[0].acceptedAnswer["@type"], "Answer");
+  assert.equal(data.mainEntity[0].acceptedAnswer.text.length > 0, true);
+  assert.equal(data.mainEntity[1].name, "Kenapa kayu pinus?");
+});
+
+test("faqJsonLd mengembalikan daftar kosong bila tidak ada pertanyaan", () => {
+  const data = faqJsonLd([]);
+  assert.deepEqual(data.mainEntity, []);
 });

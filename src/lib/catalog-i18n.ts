@@ -111,7 +111,7 @@ export const translations = {
     hero: {
       eyebrow: "dibuat untuk bertumbuh",
       title: ["Kecil di tangan,", "besar di imajinasi."],
-      description: "Mainan kayu yang mengundang anak untuk menyentuh, membangun, dan menemukan cerita mereka sendiri.",
+      description: "Mainan kayu edukatif dari kayu pinus pilihan — dibuat untuk disentuh, dibangun, dan dijelajahi anak setiap hari.",
       browseCollection: "Jelajahi koleksi",
       meetBrand: "Kenali Kayu Pinoes",
       selectedWood: "Kayu pilihan",
@@ -274,7 +274,7 @@ export const translations = {
     hero: {
       eyebrow: "made for growing",
       title: ["Small in their hands,", "big in their imagination."],
-      description: "Wooden toys that invite children to touch, build, and discover stories of their own.",
+      description: "Educational wooden toys made from selected pine wood — made for small hands to touch, build, and explore every day.",
       browseCollection: "Browse the collection",
       meetBrand: "Meet Kayu Pinoes",
       selectedWood: "Thoughtfully chosen wood",
@@ -437,7 +437,7 @@ export const translations = {
     hero: {
       eyebrow: "صُممت للنمو",
       title: ["صغيرة في أيديهم،", "كبيرة في خيالهم."],
-      description: "ألعاب خشبية تدعو الأطفال إلى اللمس والبناء واكتشاف حكاياتهم الخاصة.",
+      description: "ألعاب خشبية تعليمية من خشب صنوبر مختار — مصنوعة لتُلمس وتُبنى وتُستكشف كل يوم.",
       browseCollection: "استكشف المجموعة",
       meetBrand: "تعرّف إلى كايو بينويس",
       selectedWood: "خشب مختار بعناية",

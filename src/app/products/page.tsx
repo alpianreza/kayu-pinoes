@@ -15,18 +15,19 @@ import { languageAlternates, languageDirections, languageMetadata } from "@/lib/
 import { siteCopy } from "@/lib/site-copy";
 
 export const metadata: Metadata = {
-  title: "Catalog — Kayu Pinoes",
+  title: "Katalog Mainan Kayu Edukatif",
   description:
-    "Every Kayu Pinoes wooden toy in one place: material, dimensions, finish, and what comes in each set.",
+    "Jelajahi koleksi mainan kayu edukatif Kayu Pinoes: bahan kayu pinus, ukuran, usia anak, dan isi tiap set. Semua bisa dipesan via WhatsApp.",
   alternates: {
     canonical: "/products",
     languages: languageAlternates("/products"),
   },
   openGraph: {
     url: "/products",
-    title: "Catalog — Kayu Pinoes",
+    title: "Katalog Mainan Kayu Edukatif — Kayu Pinoes",
     description:
-      "Every Kayu Pinoes wooden toy in one place: material, dimensions, finish, and what comes in each set.",
+      "Jelajahi koleksi mainan kayu edukatif Kayu Pinoes: bahan kayu pinus, ukuran, usia anak, dan isi tiap set. Semua bisa dipesan via WhatsApp.",
+    siteName: "Kayu Pinoes",
     locale: languageMetadata[DEFAULT_LANGUAGE].ogLocale,
   },
 };

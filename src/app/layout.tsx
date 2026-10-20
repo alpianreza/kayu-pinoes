@@ -8,7 +8,7 @@ import { DocumentTitle } from "@/components/site/DocumentTitle";
 import { LanguageProvider } from "@/components/site/LanguageProvider";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageDirections, languageMetadata } from "@/lib/locale-metadata";
-import { organizationJsonLd } from "@/lib/seo";
+import { organizationJsonLd, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo";
 import { whatsappNumber } from "@/lib/whatsapp";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/$/, "");
@@ -52,16 +52,22 @@ const arabicFont = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "Kayu Pinoes — Mainan kayu untuk tumbuh bersama",
-  description: "Galeri mainan kayu Kayu Pinoes yang dibuat untuk tangan kecil dan imajinasi besar.",
+  // Template judul: halaman anak cukup menulis nama halamannya sendiri,
+  // akhiran merek ditambahkan di sini supaya tidak pernah dobel.
+  title: {
+    default: SITE_TITLE,
+    template: "%s — Kayu Pinoes",
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
   // metadataBase hanya diset bila alamat situs sudah diketahui dari
   // NEXT_PUBLIC_SITE_URL. Tanpa alamat itu, gambar Open Graph bertaut relatif
   // akan diselesaikan ke alamat yang salah, jadi gambar itu sengaja tidak
   // dipasang sama sekali - bukan ditebak.
   ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   openGraph: {
-    title: "Kayu Pinoes — Mainan kayu untuk tumbuh bersama",
-    description: "Galeri mainan kayu Kayu Pinoes yang dibuat untuk tangan kecil dan imajinasi besar.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     type: "website",
     // Locale mengikuti bahasa bawaan situs, bukan nilai yang diketik manual -
     // kalau DEFAULT_LANGUAGE berubah, metadata ini ikut.
@@ -70,8 +76,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kayu Pinoes — Mainan kayu untuk tumbuh bersama",
-    description: "Galeri mainan kayu Kayu Pinoes yang dibuat untuk tangan kecil dan imajinasi besar.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
 };
 

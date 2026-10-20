@@ -5,18 +5,19 @@ import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { languageAlternates, languageMetadata } from "@/lib/locale-metadata";
 
 export const metadata: Metadata = {
-  title: "Contact & how to order — Kayu Pinoes",
+  title: "Kontak & Cara Pesan Mainan Kayu",
   description:
-    "How to order Kayu Pinoes wooden toys: tell us which piece you like, and we reply over WhatsApp.",
+    "Pesan mainan kayu edukatif Kayu Pinoes: pilih produk atau minta custom, lalu balas via WhatsApp. Bisa kirim ke seluruh Indonesia.",
   alternates: {
     canonical: "/contact",
     languages: languageAlternates("/contact"),
   },
   openGraph: {
     url: "/contact",
-    title: "Contact & how to order — Kayu Pinoes",
+    title: "Kontak & Cara Pesan Mainan Kayu — Kayu Pinoes",
     description:
-      "How to order Kayu Pinoes wooden toys: tell us which piece you like, and we reply over WhatsApp.",
+      "Pesan mainan kayu edukatif Kayu Pinoes: pilih produk atau minta custom, lalu balas via WhatsApp. Bisa kirim ke seluruh Indonesia.",
+    siteName: "Kayu Pinoes",
     locale: languageMetadata[DEFAULT_LANGUAGE].ogLocale,
   },
 };

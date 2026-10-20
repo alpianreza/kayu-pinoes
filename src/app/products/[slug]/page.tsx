@@ -46,14 +46,19 @@ export async function generateMetadata({
   const product = await findProduct(slug);
 
   if (!product) {
-    return { title: "Product — Kayu Pinoes" };
+    return { title: "Produk tidak ditemukan" };
   }
 
-  const title = `${product.name} — Kayu Pinoes`;
+  const title = `${product.name}: Mainan Kayu Edukatif`;
+  // Deskripsi produk dari CMS dipakai apa adanya; kalimat cadangan hanya untuk
+  // produk yang belum punya deskripsi.
+  const description =
+    product.description?.trim() ||
+    `${product.name}: mainan kayu edukatif dari kayu pinus buatan Kayu Pinoes. Lihat bahan, ukuran, dan cara pesan.`;
 
   return {
     title,
-    description: product.description,
+    description,
     alternates: {
       canonical: `/products/${product.slug}`,
       // Satu alamat melayani tiga bahasa; pilihan bahasa disimpan di browser
@@ -61,8 +66,8 @@ export async function generateMetadata({
       languages: languageAlternates(`/products/${product.slug}`),
     },
     openGraph: {
-      title,
-      description: product.description,
+      title: `${title} — Kayu Pinoes`,
+      description,
       type: "website",
       ...(product.imageUrl
         ? { images: [{ url: product.imageUrl, alt: product.name }] }
